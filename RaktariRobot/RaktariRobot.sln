@@ -1,9 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36310.24 d17.14
+VisualStudioVersion = 17.14.36310.24
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RobotClient", "RobotClient\RobotClient.csproj", "{C4339982-B9CE-4562-91FE-90A1BEB31AD1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RobotSimulator", "WebApplication1\RobotSimulator.csproj", "{695A9416-D74A-498B-A7AE-2526FC384384}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RobotShared", "RobotShared\RobotShared.csproj", "{156DFF99-1021-4991-B7A4-B7782829AA4A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RobotTest", "RobotTest\RobotTest.csproj", "{D109672B-9A51-4018-96D3-1D8ADE773722}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +21,18 @@ Global
 		{C4339982-B9CE-4562-91FE-90A1BEB31AD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4339982-B9CE-4562-91FE-90A1BEB31AD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C4339982-B9CE-4562-91FE-90A1BEB31AD1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{695A9416-D74A-498B-A7AE-2526FC384384}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{695A9416-D74A-498B-A7AE-2526FC384384}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{695A9416-D74A-498B-A7AE-2526FC384384}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{695A9416-D74A-498B-A7AE-2526FC384384}.Release|Any CPU.Build.0 = Release|Any CPU
+		{156DFF99-1021-4991-B7A4-B7782829AA4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{156DFF99-1021-4991-B7A4-B7782829AA4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{156DFF99-1021-4991-B7A4-B7782829AA4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{156DFF99-1021-4991-B7A4-B7782829AA4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D109672B-9A51-4018-96D3-1D8ADE773722}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D109672B-9A51-4018-96D3-1D8ADE773722}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D109672B-9A51-4018-96D3-1D8ADE773722}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D109672B-9A51-4018-96D3-1D8ADE773722}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
