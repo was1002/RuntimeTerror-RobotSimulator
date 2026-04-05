@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "RobotClient\\RobotClient.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "RobotServer\\RobotServer.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
