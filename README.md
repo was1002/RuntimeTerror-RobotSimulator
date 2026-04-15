@@ -1,8 +1,8 @@
 # Alkalmazásfejlesztés (VIAUMA09) házi feladat
 
 Alapadatok:
-- A csapat neve:
-- Csapattagok (név, neptun kód): aaa (abc123), bbb (def123), ccc (ghi123)
+- A csapat neve: Runtime Terror
+- Csapattagok (név, neptun kód): Ábrahám Levente Titusz (AS90Y4), Porkoláb Ákos Benjamin (HP5OYP), Wochna András (LPMIWT)
 - Leadáshoz videó URL:
 
 A videó későbbi evfolyamok számára bemutatható/felhasználható videó vágásra?
