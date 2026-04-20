@@ -1,7 +1,7 @@
-Ôªøusing System.ComponentModel;
+using System.ComponentModel;
+using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using System.Net.Http.Json;
 using RobotShared;
 
 namespace RuntimeTerror.Client
@@ -31,7 +31,7 @@ namespace RuntimeTerror.Client
             set { _battery = value; OnPropertyChanged(); }
         }
 
-        private string _state = "K√©szenl√©t (√úres)";
+        private string _state = "Ready";
         public string State
         {
             get => _state;
@@ -52,70 +52,75 @@ namespace RuntimeTerror.Client
 
         public MainViewModel()
         {
-            MoveForwardCommand = new RelayCommand(MoveForward);
-            PickUpCommand = new RelayCommand(PickUpItem);
-            EmergencyStopCommand = new RelayCommand(EmergencyStop);
+            MoveForwardCommand = new Command(MoveForward);
+            PickUpCommand = new Command(PickUpItem);
+            EmergencyStopCommand = new Command(EmergencyStop);
         }
 
-        // K√©s√∂bb ide kell a szerver fel√© az √ºzenet k√ºld√©s is a f√ºggv√©nyekbe
         private async void MoveForward()
         {
             try
             {
-                // HTTP POST k√©r√©s k√ºld√©se, ami v√°rja a friss√≠tett JSON √°llapotot
+                // FeltÈtelezve, hogy az endpoint a teljes aktu·lis rÈszletet (RobotDetailsDto) visszaadja
                 var response = await _httpClient.PostAsync("api/robot/move-forward", null);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // JSON deszerializ√°ci√≥ a saj√°t t√≠pusunkba
-                    var updatedState = await response.Content.ReadFromJsonAsync<RobotStateDto>();
+                    var updatedState = await response.Content.ReadFromJsonAsync<RobotDetailsDto>();
 
                     if (updatedState != null)
                     {
-                        // UI friss√≠t√©se az √∫j adatokkal
-                        X = updatedState.X;
-                        Y = updatedState.Y;
-                        Battery = updatedState.Battery;
-                        State = updatedState.StateMessage;
+                        // UI frissÌtÈse az ˙j adatokkal
+                        X = updatedState.Position.X;
+                        Y = updatedState.Position.Y;
+                        Battery = updatedState.BatteryLevel;
+                        State = updatedState.State.ToString();
                     }
                 }
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Hiba a h√°l√≥zati kommunik√°ci√≥ban: {ex.Message}";
+                ErrorMessage = $"Hiba a h·lÛzati kommunik·ciÛban: {ex.Message}";
             }
         }
 
-        private void PickUpItem()
+        private async void PickUpItem()
         {
-            State = "Rakom√°ny felv√©ve";
-            Battery -= 5; // Szimul√°ljuk, hogy a felv√©tel energi√°ba ker√ºl
+            State = RobotState.Loading.ToString();
+            Battery -= 5; // Helyi szimul·ciÛ
+
+            // KÈsıbb itt is Èrdemes lesz hÌvni a szervert, pl:
+            // var response = await _httpClient.PostAsync("api/robot/pick-up", null);
         }
 
         private async void EmergencyStop()
         {
+            State = RobotState.EmergencyStop.ToString();
+            ErrorMessage = "A robot manu·lisan le·llÌtva.";
+            
             try
             {
-                var response = await _httpClient.PutAsync("api/robot/emergency-stop", null);
+                var response = await _httpClient.PostAsync("api/robot/emergency-stop", null); // PUT helyett POST, az endpointtÛl f¸gg
                 if (response.IsSuccessStatusCode)
                 {
                     var updatedState = await response.Content.ReadFromJsonAsync<RobotStateDto>();
                     if (updatedState != null)
                     {
-                        State = updatedState.StateMessage;
-                        ErrorMessage = "A szerver le√°ll√≠totta a robotot!";
+                        State = updatedState.State.ToString();
+                        ErrorMessage = updatedState.EmergencyStopActive ? "A szerver le·llÌtotta a robotot!" : "A robot ˙jra aktÌv.";
                     }
                 }
             }
             catch (Exception ex)
             {
-                ErrorMessage = "Nem siker√ºlt el√©rni a szervert!";
+                ErrorMessage = $"Nem siker¸lt elÈrni a szervert: {ex.Message}";
             }
         }
 
-        // --- Alap MVVM boilerplate k√≥d ---
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        // --- Alap MVVM boilerplate kÛd ---
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

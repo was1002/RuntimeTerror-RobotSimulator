@@ -1,4 +1,4 @@
-Ôªøusing Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using RobotShared;
 
 namespace RobotServer.Controllers
@@ -7,39 +7,39 @@ namespace RobotServer.Controllers
     [Route("api/[controller]")] 
     public class RobotController : ControllerBase
     {
-        // Ideiglenes mem√≥ria a robot √°llapot√°nak (k√©s≈ëbb ide j√∂n az Entity Framework adatb√°zis)
-        private static RobotStateDto _robotState = new RobotStateDto
+        // Ideiglenes memÛria a robot ·llapot·nak (kÈsıbb ide jˆn az Entity Framework adatb·zis)
+        private static RobotDetailsDto _robotState = new RobotDetailsDto
         {
-            X = 0,
-            Y = 0,
-            Battery = 100,
-            StateMessage = "K√©szenl√©t (Szerverr≈ël)"
+            RobotId = "ROBOT-001",
+            IsOnline = true,
+            State = RobotState.Ready,
         };
 
-        // 1. HTTP GET (√Ållapot lek√©rdez√©se)
+        // 1. HTTP GET (¡llapot lekÈrdezÈse)
         [HttpGet("state")]
-        public ActionResult<RobotStateDto> GetState()
+        public ActionResult<RobotDetailsDto> GetState()
         {
-            return Ok(_robotState); // Automatikusan JSON-n√© alak√≠tja a DTO-t!
+            return Ok(_robotState); // Automatikusan JSON-nÈ alakÌtja a DTO-t!
         }
 
-        // 2. HTTP POST (Parancs k√ºld√©se - pl. El≈ëre)
+        // 2. HTTP POST (Parancs k¸ldÈse - pl. Elıre)
         [HttpPost("move-forward")]
-        public ActionResult<RobotStateDto> MoveForward()
+        public ActionResult<RobotDetailsDto> MoveForward()
         {
-            _robotState.Y += 1.5;
-            _robotState.Battery -= 1;
-            _robotState.StateMessage = "Mozg√°s el≈ëre...";
+            _robotState.Position.Y += 1.5f;
+            _robotState.BatteryLevel -= 1;
 
             return Ok(_robotState);
         }
 
-        // 3. HTTP PUT (V√©szmeg√°ll√°s - √°llapot fel√ºl√≠r√°sa)
+        // 3. HTTP PUT (VÈszmeg·ll·s - ·llapot fel¸lÌr·sa)
         [HttpPut("emergency-stop")]
-        public ActionResult<RobotStateDto> EmergencyStop()
+        public ActionResult<RobotDetailsDto> EmergencyStop()
         {
-            _robotState.StateMessage = "V√âSZMEG√ÅLL√ÅS (Szerver regisztr√°lta)";
+            _robotState.State = RobotState.EmergencyStop;
             return Ok(_robotState);
         }
     }
 }
+
+
