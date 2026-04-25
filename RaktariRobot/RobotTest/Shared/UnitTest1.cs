@@ -1,4 +1,8 @@
-namespace RobotTest
+// this is only an example unit test file
+
+using Xunit;
+
+namespace RobotTest.Shared
 {
     public class UnitTest1
     {
