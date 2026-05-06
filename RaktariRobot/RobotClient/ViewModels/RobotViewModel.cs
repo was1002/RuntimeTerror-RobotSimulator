@@ -106,7 +106,7 @@ namespace RobotClient.ViewModels
 
         private async void PickUpItem()
         {
-            State = RobotState.Loading.ToString();
+            State = RobotState.MovingToShelf.ToString();
             Battery -= 5; // placeholder
 
             // Később itt is érdemes lesz hívni a szervert, pl:
@@ -115,7 +115,7 @@ namespace RobotClient.ViewModels
 
         private async void EmergencyStop()
         {
-            State = RobotState.EmergencyStop.ToString();
+            State = RobotState.Error.ToString();
             ErrorMessage = "A robot manuálisan leállítva.";
 
             try
@@ -127,7 +127,7 @@ namespace RobotClient.ViewModels
                     if (updatedState != null)
                     {
                         UpdateUI(updatedState);
-                        ErrorMessage = updatedState.EmergencyStopActive ? "Robot stopped by the server!" : "Robot is active again";
+                        ErrorMessage = updatedState.State == RobotState.Error ? "Robot stopped by the server!" : "Robot is active again";
                     }
                 }
             }

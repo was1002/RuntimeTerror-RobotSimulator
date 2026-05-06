@@ -13,6 +13,6 @@ namespace RuntimeTerror.RobotClient.Models
         public double X { get; set; }
         public double Y { get; set; }
         public int Battery { get; set; }
-        public RobotState State { get; set; } = RobotState.Ready;
+        public RobotState State { get; set; } = RobotState.Idle;
     }
 }

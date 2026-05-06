@@ -86,7 +86,7 @@ namespace RuntimeTerror.Client
 
         private async void PickUpItem()
         {
-            State = RobotState.Loading.ToString();
+            State = RobotState.MovingToShelf.ToString();
             Battery -= 5; // Helyi szimuláció
 
             // Késõbb itt is érdemes lesz hívni a szervert, pl:
@@ -95,7 +95,7 @@ namespace RuntimeTerror.Client
 
         private async void EmergencyStop()
         {
-            State = RobotState.EmergencyStop.ToString();
+            State = RobotState.Error.ToString();
             ErrorMessage = "A robot manuálisan leállítva.";
             
             try
@@ -103,11 +103,11 @@ namespace RuntimeTerror.Client
                 var response = await _httpClient.PostAsync("api/robot/emergency-stop", null); // PUT helyett POST, az endpointtól függ
                 if (response.IsSuccessStatusCode)
                 {
-                    var updatedState = await response.Content.ReadFromJsonAsync<RobotStateDto>();
+                    var updatedState = await response.Content.ReadFromJsonAsync<RobotDetailsDto>();
                     if (updatedState != null)
                     {
                         State = updatedState.State.ToString();
-                        ErrorMessage = updatedState.EmergencyStopActive ? "A szerver leállította a robotot!" : "A robot újra aktív.";
+                        ErrorMessage = updatedState.State == RobotState.Error ? "A szerver leállította a robotot!" : "A robot újra aktív.";
                     }
                 }
             }
