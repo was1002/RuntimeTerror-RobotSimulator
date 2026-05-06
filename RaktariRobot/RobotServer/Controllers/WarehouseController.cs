@@ -11,7 +11,7 @@ namespace RobotServer.Controllers
         [HttpGet]
         public ActionResult<WarehouseDto> GetWarehouse()
         {
-            // Dummy warehouse adatok az 1-es verzióú leírás alapján (10x7).
+            // Dummy warehouse adatok (10x7).
             var warehouse = new WarehouseDto
             {
                 Width = 10,

@@ -40,13 +40,39 @@
         </VerticalStackLayout>
 
         <Border Grid.Column="1" Stroke="Gray" StrokeThickness="2" Margin="10,0,0,0">
-            <Grid>
-                <Label Text="Térkép / Canvas helye" 
-                       HorizontalOptions="Center" 
-                       VerticalOptions="Center" 
-                       TextColor="Gray" 
-                       FontSize="24"/>
-            </Grid>
+            <ScrollView Orientation="Both" HorizontalOptions="Center" VerticalOptions="Center">
+                <AbsoluteLayout WidthRequest="400" HeightRequest="280">
+                    <!-- Térkép Cella réteg -->
+                    <AbsoluteLayout BindableLayout.ItemsSource="{Binding MapCells}" WidthRequest="400" HeightRequest="280">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Border AbsoluteLayout.LayoutBounds="{Binding Bounds}" 
+                                        AbsoluteLayout.LayoutFlags="None"
+                                        BackgroundColor="{Binding BgColor}"
+                                        Stroke="Black" StrokeThickness="1">
+                                    <Label Text="{Binding Icon}" 
+                                           TextColor="{Binding TextColor}"
+                                           HorizontalOptions="Center" 
+                                           VerticalOptions="Center" 
+                                           FontAttributes="Bold"/>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </AbsoluteLayout>
+
+                    <!-- Robot réteg (később ide jöhetnek a robotok) -->
+                    <AbsoluteLayout BindableLayout.ItemsSource="{Binding Robots}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Ellipse AbsoluteLayout.LayoutBounds="{Binding Bounds}"
+                                         AbsoluteLayout.LayoutFlags="None"
+                                         Fill="{Binding RobotColor}"
+                                         Stroke="Black" StrokeThickness="2" />
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </AbsoluteLayout>
+                </AbsoluteLayout>
+            </ScrollView>
         </Border>
 
     </Grid>

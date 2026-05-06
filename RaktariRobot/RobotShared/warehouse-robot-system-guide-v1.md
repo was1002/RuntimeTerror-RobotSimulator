@@ -176,10 +176,12 @@ Ticks perform physical simulation steps.
 
   - Starts the Client timer.
   - The Client begins sending ticks repeatedly to the Server at a fixed interval.
+
 - **Stop simulation**
 
   - Stops the Client timer.
   - The Server state remains unchanged until another command/tick arrives.
+
 - **Reset simulation**
 
   - Stops the Client timer.
@@ -194,14 +196,17 @@ Ticks perform physical simulation steps.
   - Synchronizes the frontend with the backend.
   - Sends `GET api/robots`.
   - Useful for debugging and demonstration, but not strictly required because ticks already return all robot details.
+
 - **Add robot**
 
   - Creates a new robot on the Server.
   - The Server generates a robot ID and default display name, for example `001` and `ROBOT-001` accordingly.
+
 - **Rename robot**
 
   - Changes only the display name of the robot on the Server.
   - The technical robot ID cannot be changed for stability reasons.
+
 - **Remove robot**
 
   - Deletes the selected robot from the Server.
@@ -214,19 +219,23 @@ Ticks perform physical simulation steps.
   - When a new robot is spawned, it will stand still until this button is pressed.
   - Resumes a paused robot.
   - The robot continues autonomous operation from the next tick.
+
 - **Pause robot**
 
   - Sets the robot state to `Paused`.
   - A paused robot is ignored by simulation ticks.
+
 - **Move to charger**
 
   - Manually sends the robot to the charger, before it reaches low battery.
   - The robot starts moving on the next tick.
+
 - **Move to service**
 
   - Sends the robot to the service point.
   - Useful for clearing warnings. The robot gets fixed there.
   - Should not be allowed if the robot is in `Error`, because an error means the robot cannot move.
+
 - **Move to location**
 
   - Manual override.
@@ -240,11 +249,13 @@ Ticks perform physical simulation steps.
 
   - Clears warning states.
   - Sets robot motor/sensor status to normal again.
+
 - **Fix error in place**
 
   - Press this if the robot stopped due to an error.
   - Simulates a technician walking to the robot at its current position and fixing it.
   - Clears the error and lets the robot continue.
+
 - **Simulate fault**
 
   - Creates a random warning or error for one of the components (motor, sensor) of the robot.
@@ -260,6 +271,7 @@ Ticks perform physical simulation steps.
     - position
     - battery
     - diagnostic level
+
 - **Detailed view**
 
   - Shows all robot details:
