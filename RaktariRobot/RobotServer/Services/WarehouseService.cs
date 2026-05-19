@@ -11,10 +11,10 @@ namespace RobotServer.Services
                 Width = 10,
                 Height = 7,
 
-                SpawnPosition = new PositionDto { X = 7, Y = 2 },
+                SpawnPosition = new PositionDto { X = 6, Y = 2 },
                 ChargerPosition = new PositionDto { X = 9, Y = 3 },
                 DropoffPosition = new PositionDto { X = 8, Y = 6 },
-                ServicePosition = new PositionDto { X = 2, Y = 0 },
+                ServicePosition = new PositionDto { X = 1, Y = 0 },
 
                 Shelves = new List<ShelfDto>
                 {
