@@ -33,6 +33,20 @@ If no robot is selected, it shows "No robot selected."
 # Map
 The map should be scaled to the panel size. Maybe can include some informations about what means what.
 
+## Robots on the map
+They are a circle or square (circle is better because you can see what cell is under the robot), and have a smaller circle or square inside.
+The inside represents if they are loaded or not, the outside represents their state.
+Colors and meanings:
+- Inside
+  * Gray: Unloaded
+  * Brown: Carrying load
+- Outside:
+  * Green: Ready
+  * Blue: Moving, loading or unloading
+  * Yellow: Charging or paused
+  * Red: Error or emergency stop
+  * Gray: Disconnected
+
 # Robot controls
 These only work if a robot is selected, otherwise they are inactive.
 Consists of two parts:
