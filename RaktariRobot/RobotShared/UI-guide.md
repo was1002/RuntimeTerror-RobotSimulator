@@ -1,8 +1,8 @@
 # UI layout
-![UI-layout-image](./RobotShared/app_layout_v1.jpg "UI layout")
+![UI-layout-image](app_layout_v1.jpg "UI layout")
 
 # General remarks
-- This UI guide was made based on ![warehouse-robot-system-guide-v1.md](./RobotShared/warehouse-robot-system-guide-v1.md).
+- This UI guide was made based on ![warehouse-robot-system-guide-v1.md](warehouse-robot-system-guide-v1.md).
 - After running the application, every section should be on screen without the need of resizing (for normal computer screens).
 - Every panel should display its name on the top left corner.
 
@@ -20,13 +20,13 @@ Consists of three buttons:
 # Robot list
 Here are all the robots displayed in rows, and here are they selected.
 The control buttons are on the top: Add, Rename, Remove. The last to only works if a robot is selected.
-The displayed informations of the robots in each row are written in the ![warehouse-robot-system-guide-v1.md](./RobotShared/warehouse-robot-system-guide-v1.md)
+The displayed informations of the robots in each row are written in the ![warehouse-robot-system-guide-v1.md](warehouse-robot-system-guide-v1.md)
 Client buttons/Viewbuttons/Simple view section.
 
 ## Toggleable detailed informations panel
 This is only displayed if the Simple/Detailed view button is set to Detailed view.
 It appears at the bottom of the Robot list panel, and shortens the displayed robot list (and if there are lots of robots, it should be scrollable).
-It displayes the detailed informations for the selected robot only. The displayed informations are written in the ![warehouse-robot-system-guide-v1.md](./RobotShared/warehouse-robot-system-guide-v1.md)
+It displayes the detailed informations for the selected robot only. The displayed informations are written in the ![warehouse-robot-system-guide-v1.md](warehouse-robot-system-guide-v1.md)
 Client buttons/Viewbuttons/Detailed view section.
 If no robot is selected, it shows "No robot selected."
 
