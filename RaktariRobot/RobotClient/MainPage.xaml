@@ -8,17 +8,17 @@
         <local:MainViewModel />
     </ContentPage.BindingContext>
 
-    <Grid ColumnDefinitions="4*, 6*" RowDefinitions="60, *, 220" ColumnSpacing="10" RowSpacing="10" Padding="10" BackgroundColor="Black">
+    <Grid ColumnDefinitions="4*, 6*" RowDefinitions="60, *, 220" ColumnSpacing="10" RowSpacing="10" Padding="10" BackgroundColor="#121212">
         
         <!-- Project name -->
-        <Border Grid.Row="0" Grid.Column="0" BackgroundColor="LightGray" Stroke="Black" StrokeThickness="2">
-            <Label Text="Runtime Terror" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" />
+        <Border Grid.Row="0" Grid.Column="0" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
+            <Label Text="Runtime Terror" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" TextColor="White" />
         </Border>
 
         <!-- General controls -->
-        <Border Grid.Row="0" Grid.Column="1" BackgroundColor="LightGreen" Stroke="Black" StrokeThickness="2">
+        <Border Grid.Row="0" Grid.Column="1" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
             <HorizontalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="20">
-                <Label Text="General controls" FontAttributes="Bold" VerticalOptions="Center" Margin="0,0,20,0"/>
+                <Label Text="General controls" FontAttributes="Bold" VerticalOptions="Center" Margin="0,0,20,0" TextColor="#BDBDBD"/>
                 <Button Text="Start/Stop" />
                 <Button Text="Reset" />
                 <Button Text="Simple/Detailed view" />
@@ -28,9 +28,9 @@
         <!-- Robot list and Toggleable info -->
         <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="*, Auto" RowSpacing="10">
             <!-- Robot list -->
-            <Border Grid.Row="0" BackgroundColor="LightBlue" Stroke="Black" StrokeThickness="2">
+            <Border Grid.Row="0" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
                 <Grid RowDefinitions="Auto, *">
-                    <Label Grid.Row="0" Text="Robot list" FontAttributes="Bold" Margin="5"/>
+                    <Label Grid.Row="0" Text="Robot list" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
                     <HorizontalStackLayout Grid.Row="0" HorizontalOptions="End" Spacing="5" Margin="5">
                         <Button Text="Add" Padding="5,0"/>
                         <Button Text="Rename" Padding="5,0"/>
@@ -39,7 +39,7 @@
                     <CollectionView Grid.Row="1" Margin="5">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Label Text="Robot Item" />
+                                <Label Text="Robot Item" TextColor="White" Margin="10,5" />
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
@@ -47,20 +47,20 @@
             </Border>
 
             <!-- Toggleable detailed informations -->
-            <Border Grid.Row="1" BackgroundColor="CadetBlue" Stroke="Black" StrokeThickness="2" HeightRequest="150" IsVisible="True">
+            <Border Grid.Row="1" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8" HeightRequest="150" IsVisible="True">
                 <ScrollView>
-                    <VerticalStackLayout Margin="5">
-                        <Label Text="Detailed informations for selected robot" FontAttributes="Bold"/>
-                        <Label Text="No robot selected." />
+                    <VerticalStackLayout Margin="10">
+                        <Label Text="Detailed informations for selected robot" FontAttributes="Bold" TextColor="#BDBDBD"/>
+                        <Label Text="No robot selected." TextColor="White" Margin="0,5,0,0"/>
                     </VerticalStackLayout>
                 </ScrollView>
             </Border>
         </Grid>
 
         <!-- Map -->
-        <Border Grid.Row="1" Grid.Column="1" BackgroundColor="Wheat" Stroke="Black" StrokeThickness="2">
+        <Border Grid.Row="1" Grid.Column="1" BackgroundColor="#161616" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
             <Grid>
-                <Label Text="Map" FontAttributes="Bold" Margin="5" ZIndex="1" />
+                <Label Text="Map" FontAttributes="Bold" Margin="10" ZIndex="1" TextColor="#BDBDBD"/>
                 <ScrollView Orientation="Both" HorizontalOptions="Center" VerticalOptions="Center">
                     <AbsoluteLayout WidthRequest="400" HeightRequest="280">
                         <!-- Térkép Cella réteg -->
@@ -98,12 +98,12 @@
         </Border>
 
         <!-- Robot movement and diagnostic controls -->
-        <Grid Grid.Row="2" Grid.Column="0" ColumnDefinitions="6*, 4*" ColumnSpacing="10" BackgroundColor="Black">
+        <Grid Grid.Row="2" Grid.Column="0" ColumnDefinitions="6*, 4*" ColumnSpacing="10" BackgroundColor="Transparent">
             <!-- Movement -->
-            <Border Grid.Column="0" BackgroundColor="LightBlue" Stroke="Black" StrokeThickness="2">
+            <Border Grid.Column="0" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
                 <Grid RowDefinitions="Auto, *">
-                    <Label Grid.Row="0" Text="Robot movement controls" FontAttributes="Bold" Margin="5"/>
-                    <VerticalStackLayout Grid.Row="1" Spacing="5" Margin="5">
+                    <Label Grid.Row="0" Text="Robot movement controls" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
+                    <VerticalStackLayout Grid.Row="1" Spacing="5" Margin="10,0,10,10">
                         <HorizontalStackLayout Spacing="5">
                             <Button Text="Start" />
                             <Button Text="Pause" />
@@ -122,10 +122,10 @@
             </Border>
 
             <!-- Diagnostics Controls -->
-            <Border Grid.Column="1" BackgroundColor="LightBlue" Stroke="Black" StrokeThickness="2">
+            <Border Grid.Column="1" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
                 <Grid RowDefinitions="Auto, *">
-                    <Label Grid.Row="0" Text="Robot diagnostic controls" FontAttributes="Bold" Margin="5"/>
-                    <VerticalStackLayout Grid.Row="1" Spacing="5" Margin="5">
+                    <Label Grid.Row="0" Text="Robot diagnostic controls" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
+                    <VerticalStackLayout Grid.Row="1" Spacing="5" Margin="10,0,10,10">
                         <Button Text="Clear warning" />
                         <Button Text="Fix error" />
                         <Button Text="Simulate fault" />
@@ -135,13 +135,13 @@
         </Grid>
 
         <!-- Diagnostics App Wide -->
-        <Border Grid.Row="2" Grid.Column="1" BackgroundColor="LightGoldenrodYellow" Stroke="Black" StrokeThickness="2">
+        <Border Grid.Row="2" Grid.Column="1" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
             <Grid RowDefinitions="Auto, *">
-                <Label Grid.Row="0" Text="Diagnostics (errors, warnings)" FontAttributes="Bold" Margin="5"/>
-                <ScrollView Grid.Row="1" Margin="5">
+                <Label Grid.Row="0" Text="Diagnostics (errors, warnings)" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
+                <ScrollView Grid.Row="1" Margin="10,0,10,10">
                     <VerticalStackLayout>
-                        <Label Text="{Binding ErrorMessage}" TextColor="Red" />
-                        <Label Text="No other warnings." />
+                        <Label Text="{Binding ErrorMessage}" TextColor="#FF6B6B" />
+                        <Label Text="No other warnings." TextColor="White"/>
                     </VerticalStackLayout>
                 </ScrollView>
             </Grid>
