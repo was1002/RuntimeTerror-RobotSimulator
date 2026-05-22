@@ -5,7 +5,8 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Microsoft.Maui.Graphics;
 using RobotShared;
-using RuntimeTerror.Client.Models; // Models for MapCell and RobotMarker
+using RuntimeTerror.Client.Models;
+using System.Diagnostics;
 
 namespace RuntimeTerror.Client
 {
@@ -13,66 +14,91 @@ namespace RuntimeTerror.Client
     {
         private readonly HttpClient _httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5090/") };
 
-        // Térképhez
+        // --- Map Properties ---
         public ObservableCollection<MapCell> MapCells { get; } = new();
-        public ObservableCollection<RobotMarker> Robots { get; } = new();
-        public double CellSize { get; } = 40; // Pixel méret egy cellának
+        public ObservableCollection<RobotMarker> MapRobots { get; } = new();
+        public double CellSize { get; } = 40; 
 
-        // Térkép betöltése
-        public ICommand LoadMapCommand { get; }
+        // --- Robot List Properties ---
+        public ObservableCollection<ObservableRobot> RobotsList { get; } = new();
 
-        private double _x = 0;
-        public double X
+        private ObservableRobot? _selectedRobot;
+        public ObservableRobot? SelectedRobot
         {
-            get => _x;
-            set { _x = value; OnPropertyChanged(); }
+            get => _selectedRobot;
+            set { _selectedRobot = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasSelectedRobot)); }
         }
 
-        private double _y = 0;
-        public double Y
-        {
-            get => _y;
-            set { _y = value; OnPropertyChanged(); }
-        }
+        public bool HasSelectedRobot => SelectedRobot != null;
 
-        private int _battery = 100;
-        public int Battery
+        // --- Simulation State ---
+        private bool _isSimulationRunning;
+        public bool IsSimulationRunning
         {
-            get => _battery;
-            set { _battery = value; OnPropertyChanged(); }
+            get => _isSimulationRunning;
+            set 
+            { 
+                _isSimulationRunning = value; 
+                OnPropertyChanged(); 
+                OnPropertyChanged(nameof(SimulationButtonText));
+            }
         }
+        
+        public string SimulationButtonText => IsSimulationRunning ? "Stop" : "Start";
 
-        private string _state = "Ready";
-        public string State
+        private string _appMessage = "";
+        public string AppMessage
         {
-            get => _state;
-            set { _state = value; OnPropertyChanged(); }
+            get => _appMessage;
+            set { _appMessage = value; OnPropertyChanged(); }
         }
+        
+        public int ManualTargetX { get; set; }
+        public int ManualTargetY { get; set; }
 
-        private string _errorMessage = "";
-        public string ErrorMessage
-        {
-            get => _errorMessage;
-            set { _errorMessage = value; OnPropertyChanged(); }
-        }
+        public string InputNewName { get; set; } = "ROBOT-NEW";
+
+        private CancellationTokenSource? _tickCancellationTokenSource;
 
         // --- Commands ---
-        public ICommand MoveForwardCommand { get; }
-        public ICommand PickUpCommand { get; }
-        public ICommand EmergencyStopCommand { get; }
+        public ICommand ToggleSimulationCommand { get; }
+        public ICommand ResetSimulationCommand { get; }
+        public ICommand AddRobotCommand { get; }
+        public ICommand RemoveRobotCommand { get; }
+        public ICommand RenameRobotCommand { get; }
+        
+        public ICommand ResumeRobotCommand { get; }
+        public ICommand PauseRobotCommand { get; }
+        public ICommand MoveToChargerCommand { get; }
+        public ICommand MoveToServiceCommand { get; }
+        public ICommand SetLocationCommand { get; }
+        
+        public ICommand ClearWarningCommand { get; }
+        public ICommand FixErrorCommand { get; }
+        public ICommand SimulateFaultCommand { get; }
 
         public MainViewModel()
         {
-            LoadMapCommand = new Command(LoadMap);
-            MoveForwardCommand = new Command(MoveForward);
-            PickUpCommand = new Command(PickUpItem);
-            EmergencyStopCommand = new Command(EmergencyStop);
+            ToggleSimulationCommand = new Command(ToggleSimulation);
+            ResetSimulationCommand = new Command(async () => await ResetSimulation());
+            AddRobotCommand = new Command(async () => await AddRobot());
+            RemoveRobotCommand = new Command(async () => await ExecuteRobotCommand("DELETE", ""));
+            RenameRobotCommand = new Command(async () => await RenameRobot());
+
+            ResumeRobotCommand = new Command(async () => await ExecuteRobotCommand("POST", "resume"));
+            PauseRobotCommand = new Command(async () => await ExecuteRobotCommand("POST", "pause"));
+            MoveToChargerCommand = new Command(async () => await ExecuteRobotCommand("POST", "move-to-charger"));
+            MoveToServiceCommand = new Command(async () => await ExecuteRobotCommand("POST", "move-to-service"));
+            SetLocationCommand = new Command(async () => await SetManualLocation());
             
-            // Automatikus térképbetöltés
-            LoadMap();
+            ClearWarningCommand = new Command(async () => await ExecuteRobotCommand("POST", "clear-warning"));
+            FixErrorCommand = new Command(async () => await ExecuteRobotCommand("POST", "fix-error"));
+            SimulateFaultCommand = new Command(async () => await ExecuteRobotCommand("POST", "simulate-fault"));
+
+            LoadWarehouse();
         }
 
-        private async void LoadMap()
+        private async void LoadWarehouse()
         {
             try
             {
@@ -84,14 +110,13 @@ namespace RuntimeTerror.Client
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Térkép betöltési hiba: {ex.Message}";
+                AppMessage = $"Warehouse load error: {ex.Message}";
             }
         }
 
         private void GenerateMap(WarehouseDto warehouse)
         {
             MapCells.Clear();
-
             for (int y = 0; y < warehouse.Height; y++)
             {
                 for (int x = 0; x < warehouse.Width; x++)
@@ -99,88 +124,262 @@ namespace RuntimeTerror.Client
                     string icon = "";
                     Color bgColor = Colors.LightGray;
 
-                    // Ellenõrizzük, mi van ezen a pozíción
                     if (warehouse.SpawnPosition.X == x && warehouse.SpawnPosition.Y == y) { icon = "R"; bgColor = Colors.LightBlue; }
                     else if (warehouse.DropoffPosition.X == x && warehouse.DropoffPosition.Y == y) { icon = "D"; bgColor = Colors.Orange; }
                     else if (warehouse.ChargerPosition.X == x && warehouse.ChargerPosition.Y == y) { icon = "C"; bgColor = Colors.Yellow; }
                     else if (warehouse.ServicePosition.X == x && warehouse.ServicePosition.Y == y) { icon = "W"; bgColor = Colors.Magenta; }
-                    else if (warehouse.Shelves.Any(s => s.Position.X == x && s.Position.Y == y))
-                    {
-                        icon = "S";
-                        bgColor = Colors.SaddleBrown;
-                    }
+                    else if (warehouse.Shelves.Any(s => s.Position.X == x && s.Position.Y == y)) { icon = "S"; bgColor = Colors.SaddleBrown; }
 
                     MapCells.Add(new MapCell
                     {
                         Icon = icon,
                         BgColor = bgColor,
                         TextColor = Colors.Black,
-                        Bounds = new Rect(x * CellSize, y * CellSize, CellSize - 2, CellSize - 2) // pici margó
+                        Bounds = new Rect(x * CellSize, y * CellSize, CellSize - 2, CellSize - 2)
                     });
                 }
             }
         }
 
-        private async void MoveForward()
+        private void ToggleSimulation()
         {
+            if (IsSimulationRunning)
+            {
+                IsSimulationRunning = false;
+                _tickCancellationTokenSource?.Cancel();
+            }
+            else
+            {
+                IsSimulationRunning = true;
+                _tickCancellationTokenSource = new CancellationTokenSource();
+                _ = Task.Run(() => SimulationTickLoopAsync(_tickCancellationTokenSource.Token));
+            }
+        }
+
+        private async Task SimulationTickLoopAsync(CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    var response = await _httpClient.PostAsync("api/simulation/tick", null, token);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var robots = await response.Content.ReadFromJsonAsync<List<RobotDetailsDto>>(cancellationToken: token);
+                        if (robots != null)
+                        {
+                            MainThread.BeginInvokeOnMainThread(() => UpdateRobotsData(robots));
+                        }
+                    }
+                }
+                catch (TaskCanceledException) { /* Ignored */ }
+                catch (Exception ex)
+                {
+                    MainThread.BeginInvokeOnMainThread(() => AppMessage = $"Tick error: {ex.Message}");
+                }
+
+                await Task.Delay(1000, token);
+            }
+        }
+
+        private void UpdateRobotsData(List<RobotDetailsDto> newRobotsList)
+        {
+            int? currentSelectedId = SelectedRobot?.RobotId;
+
+            var newIds = newRobotsList.Select(r => r.RobotId).ToHashSet();
+
+            for (int i = RobotsList.Count - 1; i >= 0; i--)
+            {
+                if (!newIds.Contains(RobotsList[i].RobotId))
+                    RobotsList.RemoveAt(i);
+            }
+
+            for (int i = MapRobots.Count - 1; i >= 0; i--)
+            {
+                if (!newIds.Contains(MapRobots[i].RobotId))
+                    MapRobots.RemoveAt(i);
+            }
+
+            // Hozzáadás vagy meglévõk tulajdonságainak frissítése
+            foreach (var robot in newRobotsList)
+            {
+                Color robotColor = Colors.Green;
+                if (robot.State == RobotState.Error) robotColor = Colors.Red;
+                else if (robot.State == RobotState.Paused || robot.State == RobotState.Charging) robotColor = Colors.Yellow;
+                else if (robot.State != RobotState.Idle) robotColor = Colors.Blue;
+
+                // 1. RobotsList (ide kötjük a UI listát)
+                var existingListIndex = RobotsList.ToList().FindIndex(r => r.RobotId == robot.RobotId);
+                if (existingListIndex >= 0)
+                {
+                    var existingItem = RobotsList[existingListIndex];
+
+                    // Kiszámoljuk a sablon kategóriáját (0=Normál, 1=Figyelmeztetés, 2=Hiba)
+                    bool isOldError = existingItem.DiagnosticLevel == DiagnosticLevel.Error || existingItem.State == RobotState.Error;
+                    bool isOldWarning = !isOldError && (existingItem.DiagnosticLevel == DiagnosticLevel.Warning || existingItem.DiagnosticLevel == DiagnosticLevel.CriticalWarning);
+                    int oldCategory = isOldError ? 2 : (isOldWarning ? 1 : 0);
+
+                    bool isNewError = robot.DiagnosticLevel == DiagnosticLevel.Error || robot.State == RobotState.Error;
+                    bool isNewWarning = !isNewError && (robot.DiagnosticLevel == DiagnosticLevel.Warning || robot.DiagnosticLevel == DiagnosticLevel.CriticalWarning);
+                    int newCategory = isNewError ? 2 : (isNewWarning ? 1 : 0);
+
+                    if (oldCategory != newCategory)
+                    {
+                        // Ha megváltozott a hibaállapot, kicseréljük az objektumot, 
+                        // hogy a DataTemplateSelector újra kiértékelje és betöltse az új UI sablont.
+                        RobotsList[existingListIndex] = new ObservableRobot(robot);
+                    }
+                    else
+                    {
+                        // Ha csak a pozíció vagy az aksi módosult, frissítjük az értékeket villogás nélkül.
+                        existingItem.UpdateFromDto(robot);
+                    }
+                }
+                else
+                {
+                    RobotsList.Add(new ObservableRobot(robot));
+                }
+
+                // 2. MapRobots (térkép markerek)
+                var existingMarker = MapRobots.FirstOrDefault(m => m.RobotId == robot.RobotId);
+                if (existingMarker != null)
+                {
+                    existingMarker.DisplayName = robot.DisplayName;
+                    existingMarker.Bounds = new Rect(robot.Position.X * CellSize + 5, robot.Position.Y * CellSize + 5, CellSize - 12, CellSize - 12);
+                    existingMarker.RobotColor = robotColor;
+                }
+                else
+                {
+                    MapRobots.Add(new RobotMarker
+                    {
+                        RobotId = robot.RobotId,
+                        DisplayName = robot.DisplayName,
+                        Bounds = new Rect(robot.Position.X * CellSize + 5, robot.Position.Y * CellSize + 5, CellSize - 12, CellSize - 12),
+                        RobotColor = robotColor
+                    });
+                }
+            }
+
+            if (currentSelectedId.HasValue && SelectedRobot == null)
+            {
+                SelectedRobot = RobotsList.FirstOrDefault(r => r.RobotId == currentSelectedId.Value);
+            }
+        }
+
+        private async Task ExecuteRobotCommand(string method, string endpointSuffix)
+        {
+            if (SelectedRobot == null) { AppMessage = "No robot selected."; return; }
+
             try
             {
-                var response = await _httpClient.PostAsync("api/robot/move-forward", null);
+                string url = $"api/robots/{SelectedRobot.RobotId}/{endpointSuffix}";
+                HttpResponseMessage response;
+                
+                if (method == "DELETE")
+                {
+                     url = $"api/robots/{SelectedRobot.RobotId}";
+                     response = await _httpClient.DeleteAsync(url);
+                }
+                else
+                {
+                     response = await _httpClient.PostAsync(url, null);
+                }
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var updatedState = await response.Content.ReadFromJsonAsync<RobotDetailsDto>();
-
-                    if (updatedState != null)
-                    {
-                        X = updatedState.Position.X;
-                        Y = updatedState.Position.Y;
-                        Battery = updatedState.BatteryLevel;
-                        State = updatedState.State.ToString();
-                    }
+                    AppMessage = "Command executed successfully.";
+                    await RefreshRobotsAsync();
+                }
+                else
+                {
+                    AppMessage = $"Command failed. Status code: {response.StatusCode}";
                 }
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error in the network communication: {ex.Message}";
+                AppMessage = $"Command error: {ex.Message}";
             }
         }
 
-        private async void PickUpItem()
+        private async Task AddRobot()
         {
-            State = RobotState.MovingToShelf.ToString();
-            Battery -= 5; // Helyi szimuláció
-
-            // Késõbb itt is érdemes lesz hívni a szervert, pl:
-            // var response = await _httpClient.PostAsync("api/robot/pick-up", null);
-        }
-
-        private async void EmergencyStop()
-        {
-            State = RobotState.Error.ToString();
-            ErrorMessage = "A robot manuálisan leállítva.";
-            
             try
             {
-                var response = await _httpClient.PostAsync("api/robot/emergency-stop", null); // PUT helyett POST, az endpointtól függ
+                var req = new CreateRobotRequestDto { DisplayName = InputNewName };
+                var response = await _httpClient.PostAsJsonAsync("api/robots", req);
                 if (response.IsSuccessStatusCode)
                 {
-                    var updatedState = await response.Content.ReadFromJsonAsync<RobotDetailsDto>();
-                    if (updatedState != null)
+                    AppMessage = "Robot added.";
+                    await RefreshRobotsAsync();
+                }
+            }
+            catch (Exception ex) { AppMessage = $"Add error: {ex.Message}"; }
+        }
+
+        private async Task RenameRobot()
+        {
+            if (SelectedRobot == null) return;
+            try
+            {
+                var req = new RenameRobotRequestDto { NewDisplayName = InputNewName };
+                var response = await _httpClient.PostAsJsonAsync($"api/robots/{SelectedRobot.RobotId}/rename", req);
+                if (response.IsSuccessStatusCode)
+                {
+                    AppMessage = "Robot renamed.";
+                    await RefreshRobotsAsync();
+                }
+            }
+            catch (Exception ex) { AppMessage = $"Rename error: {ex.Message}"; }
+        }
+
+        private async Task SetManualLocation()
+        {
+            if (SelectedRobot == null) return;
+            try
+            {
+                var req = new MoveToLocationRequestDto { X = ManualTargetX, Y = ManualTargetY };
+                var response = await _httpClient.PostAsJsonAsync($"api/robots/{SelectedRobot.RobotId}/move-to-location", req);
+                if (response.IsSuccessStatusCode)
+                {
+                    AppMessage = $"Location set to {req.X}, {req.Y}.";
+                    await RefreshRobotsAsync();
+                }
+            }
+            catch (Exception ex) { AppMessage = $"Location error: {ex.Message}"; }
+        }
+
+        private async Task ResetSimulation()
+        {
+            try
+            {
+                var res = await _httpClient.PostAsync("api/simulation/reset", null);
+                if (res.IsSuccessStatusCode)
+                {
+                    AppMessage = "Simulation reset.";
+                    var data = await res.Content.ReadFromJsonAsync<SimulationResetResponseDto>();
+                    if (data != null)
                     {
-                        State = updatedState.State.ToString();
-                        ErrorMessage = updatedState.State == RobotState.Error ? "Robot stopped by the server!" : "Robot is active again.";
+                        GenerateMap(data.Warehouse);
+                        UpdateRobotsData(data.Robots);
+                        SelectedRobot = null;
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) { AppMessage = $"Reset error: {ex.Message}"; }
+        }
+
+        private async Task RefreshRobotsAsync()
+        {
+            if(IsSimulationRunning) return; // If running, tick handles it
+            try
             {
-                ErrorMessage = $"Cannot reach the server: {ex.Message}";
+                var robots = await _httpClient.GetFromJsonAsync<List<RobotDetailsDto>>("api/robots");
+                if (robots != null) UpdateRobotsData(robots);
             }
+            catch { /* Ignore async refresh errors for brevity */ }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

@@ -1,8 +1,48 @@
 ﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:RuntimeTerror.Client"
+             xmlns:selectors="clr-namespace:RuntimeTerror.Client.Selectors"
              x:Class="RobotClient.MainPage"
              Title="Runtime Terror - Robot Szimulátor">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <local:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+
+            <!-- Data Templates for Robot List -->
+            <DataTemplate x:Key="NormalRobotTemplate">
+                <ContentView Padding="10,8">
+                    <HorizontalStackLayout Spacing="10">
+                        <Ellipse WidthRequest="10" HeightRequest="10" Fill="Green" VerticalOptions="Center"/>
+                        <Label Text="{Binding DisplayName}" TextColor="White" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+                    </HorizontalStackLayout>
+                </ContentView>
+            </DataTemplate>
+
+            <DataTemplate x:Key="WarningRobotTemplate">
+                <ContentView Padding="10,8" BackgroundColor="#4A4A00">
+                    <HorizontalStackLayout Spacing="10">
+                        <Ellipse WidthRequest="10" HeightRequest="10" Fill="Yellow" VerticalOptions="Center"/>
+                        <Label Text="{Binding DisplayName}" TextColor="Yellow" FontAttributes="Bold" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+                    </HorizontalStackLayout>
+                </ContentView>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ErrorRobotTemplate">
+                <ContentView Padding="10,8" BackgroundColor="#4A0000">
+                    <HorizontalStackLayout Spacing="10">
+                        <Ellipse WidthRequest="10" HeightRequest="10" Fill="Red" VerticalOptions="Center"/>
+                        <Label Text="{Binding DisplayName}" TextColor="#FF6B6B" FontAttributes="Bold" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+                    </HorizontalStackLayout>
+                </ContentView>
+            </DataTemplate>
+
+            <selectors:RobotStateTemplateSelector x:Key="RobotStateSelector"
+                NormalTemplate="{StaticResource NormalRobotTemplate}"
+                WarningTemplate="{StaticResource WarningRobotTemplate}"
+                ErrorTemplate="{StaticResource ErrorRobotTemplate}" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <ContentPage.BindingContext>
         <local:MainViewModel />
@@ -19,8 +59,8 @@
         <Border Grid.Row="0" Grid.Column="1" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
             <HorizontalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="20">
                 <Label Text="General controls" FontAttributes="Bold" VerticalOptions="Center" Margin="0,0,20,0" TextColor="#BDBDBD"/>
-                <Button Text="Start/Stop" />
-                <Button Text="Reset" />
+                <Button Text="{Binding SimulationButtonText}" Command="{Binding ToggleSimulationCommand}"/>
+                <Button Text="Reset" Command="{Binding ResetSimulationCommand}"/>
                 <Button Text="Simple/Detailed view" />
             </HorizontalStackLayout>
         </Border>
@@ -32,16 +72,13 @@
                 <Grid RowDefinitions="Auto, *">
                     <Label Grid.Row="0" Text="Robot list" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
                     <HorizontalStackLayout Grid.Row="0" HorizontalOptions="End" Spacing="5" Margin="5">
-                        <Button Text="Add" Padding="5,0"/>
-                        <Button Text="Rename" Padding="5,0"/>
-                        <Button Text="Remove" Padding="5,0"/>
+                        <Entry Placeholder="Name" Text="{Binding InputNewName}" WidthRequest="100" />
+                        <Button Text="Add" Command="{Binding AddRobotCommand}" Padding="5,0"/>
+                        <Button Text="Rename" Command="{Binding RenameRobotCommand}" Padding="5,0"/>
+                        <Button Text="Remove" Command="{Binding RemoveRobotCommand}" Padding="5,0"/>
                     </HorizontalStackLayout>
-                    <CollectionView Grid.Row="1" Margin="5">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Label Text="Robot Item" TextColor="White" Margin="10,5" />
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
+                    <CollectionView Grid.Row="1" Margin="5" ItemsSource="{Binding RobotsList}" SelectedItem="{Binding SelectedRobot}" SelectionMode="Single"
+                                    ItemTemplate="{StaticResource RobotStateSelector}">
                     </CollectionView>
                 </Grid>
             </Border>
@@ -51,7 +88,12 @@
                 <ScrollView>
                     <VerticalStackLayout Margin="10">
                         <Label Text="Detailed informations for selected robot" FontAttributes="Bold" TextColor="#BDBDBD"/>
-                        <Label Text="No robot selected." TextColor="White" Margin="0,5,0,0"/>
+                        <Label Text="{Binding SelectedRobot.DisplayName, StringFormat='Name: {0}'}" TextColor="White" Margin="0,5,0,0"/>
+                        <Label Text="{Binding SelectedRobot.State, StringFormat='State: {0}'}" TextColor="White"/>
+                        <Label Text="{Binding SelectedRobot.BatteryLevel, StringFormat='Battery: {0}%'}" TextColor="White"/>
+                        <Label Text="{Binding SelectedRobot.DiagnosticLevel, StringFormat='Diagnostics: {0}'}" TextColor="White"/>
+                        <Label Text="{Binding SelectedRobot.LastErrorMessage, StringFormat='Last Error: {0}'}" TextColor="Red"/>
+                        <Label Text="No robot selected." TextColor="Gray" IsVisible="{Binding HasSelectedRobot, Converter={x:StaticResource InvertedBoolConverter}}" Margin="0,5,0,0"/>
                     </VerticalStackLayout>
                 </ScrollView>
             </Border>
@@ -82,7 +124,7 @@
                         </AbsoluteLayout>
 
                         <!-- Robot réteg -->
-                        <AbsoluteLayout BindableLayout.ItemsSource="{Binding Robots}">
+                        <AbsoluteLayout BindableLayout.ItemsSource="{Binding MapRobots}">
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate>
                                     <Ellipse AbsoluteLayout.LayoutBounds="{Binding Bounds}"
@@ -105,17 +147,17 @@
                     <Label Grid.Row="0" Text="Robot movement controls" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
                     <VerticalStackLayout Grid.Row="1" Spacing="5" Margin="10,0,10,10">
                         <HorizontalStackLayout Spacing="5">
-                            <Button Text="Start" />
-                            <Button Text="Pause" />
+                            <Button Text="Start" Command="{Binding ResumeRobotCommand}" />
+                            <Button Text="Pause" Command="{Binding PauseRobotCommand}" />
                         </HorizontalStackLayout>
                         <HorizontalStackLayout Spacing="5">
-                            <Button Text="To Charger" />
-                            <Button Text="To Service" />
+                            <Button Text="To Charger" Command="{Binding MoveToChargerCommand}" />
+                            <Button Text="To Service" Command="{Binding MoveToServiceCommand}" />
                         </HorizontalStackLayout>
                         <HorizontalStackLayout Spacing="5">
-                            <Entry Placeholder="X" WidthRequest="40" Keyboard="Numeric"/>
-                            <Entry Placeholder="Y" WidthRequest="40" Keyboard="Numeric"/>
-                            <Button Text="Set" />
+                            <Entry Placeholder="X" Text="{Binding ManualTargetX}" WidthRequest="40" Keyboard="Numeric"/>
+                            <Entry Placeholder="Y" Text="{Binding ManualTargetY}" WidthRequest="40" Keyboard="Numeric"/>
+                            <Button Text="Set" Command="{Binding SetLocationCommand}" />
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
                 </Grid>
@@ -126,9 +168,9 @@
                 <Grid RowDefinitions="Auto, *">
                     <Label Grid.Row="0" Text="Robot diagnostic controls" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
                     <VerticalStackLayout Grid.Row="1" Spacing="5" Margin="10,0,10,10">
-                        <Button Text="Clear warning" />
-                        <Button Text="Fix error" />
-                        <Button Text="Simulate fault" />
+                        <Button Text="Clear warning" Command="{Binding ClearWarningCommand}" />
+                        <Button Text="Fix error" Command="{Binding FixErrorCommand}" />
+                        <Button Text="Simulate fault" Command="{Binding SimulateFaultCommand}" />
                     </VerticalStackLayout>
                 </Grid>
             </Border>
@@ -140,7 +182,7 @@
                 <Label Grid.Row="0" Text="Diagnostics (errors, warnings)" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
                 <ScrollView Grid.Row="1" Margin="10,0,10,10">
                     <VerticalStackLayout>
-                        <Label Text="{Binding ErrorMessage}" TextColor="#FF6B6B" />
+                        <Label Text="{Binding AppMessage}" TextColor="#FF6B6B" />
                         <Label Text="No other warnings." TextColor="White"/>
                     </VerticalStackLayout>
                 </ScrollView>

@@ -14,6 +14,8 @@ public class MapCell
 
 public class RobotMarker : INotifyPropertyChanged
 {
+    public int RobotId { get; set; }
+
     private Rect _bounds;
     public Rect Bounds
     {

@@ -1,164 +1,113 @@
 using Microsoft.AspNetCore.Mvc;
+using RobotServer.Services;
 using RobotShared;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace RobotServer.Controllers
 {
     [ApiController]
-    [Route("api/robots")] // Új útvonal: api/robots
+    [Route("api/robots")]
     public class RobotsController : ControllerBase
     {
-        // Késõbb ezt érdemes egy külön "RobotSimulationService"-be kiszervezni!
-        private static List<RobotDetailsDto> _robots = new List<RobotDetailsDto>();
-        private static int _nextRobotId = 1;
+        private readonly RobotSimulationService _simulationService;
 
-        // --- GET Endpoints ---
-        
+        public RobotsController(RobotSimulationService simulationService)
+        {
+            _simulationService = simulationService;
+        }
+
         [HttpGet]
         public ActionResult<List<RobotDetailsDto>> GetAllRobots()
         {
-            return Ok(_robots);
+            return Ok(_simulationService.GetRobots());
         }
-
-        // --- Robot Command Endpoints ---
 
         [HttpPost]
         public ActionResult<RobotCommandResultDto> CreateRobot([FromBody] CreateRobotRequestDto request)
         {
-            var newRobot = new RobotDetailsDto
-            {
-                RobotId = _nextRobotId++,
-                DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? $"ROBOT-{_nextRobotId - 1:D3}" : request.DisplayName,
-                State = RobotState.Idle, // Alapértelmezett állapot, amíg a Resume gombot meg nem nyomják
-                Position = new PositionDto { X = 0, Y = 2 }, // Spawn pont
-                BatteryLevel = 100,
-                DiagnosticLevel = DiagnosticLevel.Normal,
-                MotorStatus = ComponentStatus.Normal,
-                SensorStatus = ComponentStatus.Normal
-            };
-
-            _robots.Add(newRobot);
-
-            return Ok(new RobotCommandResultDto { Success = true, Message = "Robot created.", RobotId = newRobot.RobotId });
+            var result = _simulationService.CreateRobot(request);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
         }
 
         [HttpPost("{robotId}/rename")]
         public ActionResult<RobotCommandResultDto> RenameRobot(int robotId, [FromBody] RenameRobotRequestDto request)
         {
-            var robot = _robots.FirstOrDefault(r => r.RobotId == robotId);
-            if (robot == null) return NotFound(new RobotCommandResultDto { Success = false, Message = "Robot not found." });
-
-            robot.DisplayName = request.NewDisplayName;
-            return Ok(new RobotCommandResultDto { Success = true, Message = "Robot renamed." });
+            var result = _simulationService.RenameRobot(robotId, request);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
         }
 
         [HttpPost("{robotId}/resume")]
         public ActionResult<RobotCommandResultDto> ResumeRobot(int robotId)
         {
-            var robot = _robots.FirstOrDefault(r => r.RobotId == robotId);
-            if (robot == null) return NotFound(new RobotCommandResultDto { Success = false, Message = "Robot not found." });
-
-            if (robot.State == RobotState.Paused || robot.State == RobotState.Idle)
-            {
-                robot.State = RobotState.MovingToShelf; // Vagy egy default logikai állapot
-            }
-            return Ok(new RobotCommandResultDto { Success = true, Message = "Robot resumed." });
+            var result = _simulationService.ResumeRobot(robotId);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
         }
 
         [HttpPost("{robotId}/pause")]
         public ActionResult<RobotCommandResultDto> PauseRobot(int robotId)
         {
-            var robot = _robots.FirstOrDefault(r => r.RobotId == robotId);
-            if (robot == null) return NotFound(new RobotCommandResultDto { Success = false, Message = "Robot not found." });
-
-            robot.State = RobotState.Paused;
-            return Ok(new RobotCommandResultDto { Success = true, Message = "Robot paused." });
+            var result = _simulationService.PauseRobot(robotId);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
         }
 
         [HttpPost("{robotId}/move-to-charger")]
         public ActionResult<RobotCommandResultDto> MoveToCharger(int robotId)
         {
-            var robot = _robots.FirstOrDefault(r => r.RobotId == robotId);
-            if (robot == null) return NotFound(new RobotCommandResultDto { Success = false, Message = "Robot not found." });
-
-            robot.State = RobotState.MovingToCharger;
-            robot.TargetPosition = new PositionDto { X = 9, Y = 3 }; // Charger pozíció a doksi szerint
-            return Ok(new RobotCommandResultDto { Success = true, Message = "Moving to charger." });
+            var result = _simulationService.MoveToCharger(robotId);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
         }
 
         [HttpPost("{robotId}/move-to-service")]
         public ActionResult<RobotCommandResultDto> MoveToService(int robotId)
         {
-            var robot = _robots.FirstOrDefault(r => r.RobotId == robotId);
-            if (robot == null) return NotFound(new RobotCommandResultDto { Success = false, Message = "Robot not found." });
-
-            robot.State = RobotState.MovingToService;
-            robot.TargetPosition = new PositionDto { X = 2, Y = 0 }; // Service (W) pozíció
-            return Ok(new RobotCommandResultDto { Success = true, Message = "Moving to service." });
+            var result = _simulationService.MoveToService(robotId);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
         }
 
         [HttpPost("{robotId}/move-to-location")]
         public ActionResult<RobotCommandResultDto> MoveToLocation(int robotId, [FromBody] MoveToLocationRequestDto request)
         {
-            var robot = _robots.FirstOrDefault(r => r.RobotId == robotId);
-            if (robot == null) return NotFound(new RobotCommandResultDto { Success = false, Message = "Robot not found." });
-
-            robot.State = RobotState.ManualMoving;
-            robot.TargetPosition = new PositionDto { X = request.X, Y = request.Y };
-            return Ok(new RobotCommandResultDto { Success = true, Message = $"Moving to ({request.X}, {request.Y})." });
+            var result = _simulationService.MoveToLocation(robotId, request);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
         }
 
         [HttpPost("{robotId}/clear-warning")]
         public ActionResult<RobotCommandResultDto> ClearWarning(int robotId)
         {
-            var robot = _robots.FirstOrDefault(r => r.RobotId == robotId);
-            if (robot == null) return NotFound(new RobotCommandResultDto { Success = false, Message = "Robot not found." });
-
-            if (robot.DiagnosticLevel == DiagnosticLevel.Warning || robot.DiagnosticLevel == DiagnosticLevel.CriticalWarning)
-            {
-                robot.DiagnosticLevel = DiagnosticLevel.Normal;
-                robot.MotorStatus = ComponentStatus.Normal;
-                robot.SensorStatus = ComponentStatus.Normal;
-            }
-            return Ok(new RobotCommandResultDto { Success = true, Message = "Warnings cleared." });
+            var result = _simulationService.ClearWarning(robotId);
+            if (!result.Success) return BadRequest(result);
+            return Ok(result);
         }
 
         [HttpPost("{robotId}/fix-error")]
         public ActionResult<RobotCommandResultDto> FixError(int robotId)
         {
-            var robot = _robots.FirstOrDefault(r => r.RobotId == robotId);
-            if (robot == null) return NotFound(new RobotCommandResultDto { Success = false, Message = "Robot not found." });
-
-            robot.State = RobotState.Idle; // Miután megjavították, újraindulhat
-            robot.DiagnosticLevel = DiagnosticLevel.Normal;
-            robot.MotorStatus = ComponentStatus.Normal;
-            robot.SensorStatus = ComponentStatus.Normal;
-            robot.LastErrorMessage = null;
-            
-            return Ok(new RobotCommandResultDto { Success = true, Message = "Error fixed." });
+            var result = _simulationService.FixError(robotId);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
         }
 
         [HttpPost("{robotId}/simulate-fault")]
         public ActionResult<RobotCommandResultDto> SimulateFault(int robotId)
         {
-            var robot = _robots.FirstOrDefault(r => r.RobotId == robotId);
-            if (robot == null) return NotFound(new RobotCommandResultDto { Success = false, Message = "Robot not found." });
-
-            robot.DiagnosticLevel = DiagnosticLevel.Warning;
-            robot.SensorStatus = ComponentStatus.Warning; // Példa egy hibára
-
-            return Ok(new RobotCommandResultDto { Success = true, Message = "Fault simulated." });
+            var result = _simulationService.SimulateFault(robotId);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
         }
 
         [HttpDelete("{robotId}")]
         public ActionResult<RobotCommandResultDto> RemoveRobot(int robotId)
         {
-            var robot = _robots.FirstOrDefault(r => r.RobotId == robotId);
-            if (robot == null) return NotFound(new RobotCommandResultDto { Success = false, Message = "Robot not found." });
-
-            _robots.Remove(robot);
-            return Ok(new RobotCommandResultDto { Success = true, Message = "Robot removed." });
+            var result = _simulationService.RemoveRobot(robotId);
+            if (!result.Success) return NotFound(result);
+            return Ok(result);
         }
     }
 }

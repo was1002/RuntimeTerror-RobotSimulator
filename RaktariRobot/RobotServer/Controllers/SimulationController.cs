@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using RobotServer.Services;
 using RobotShared;
 using System.Collections.Generic;
 
@@ -8,25 +9,25 @@ namespace RobotServer.Controllers
     [Route("api/simulation")]
     public class SimulationController : ControllerBase
     {
+        private readonly RobotSimulationService _simulationService;
+
+        public SimulationController(RobotSimulationService simulationService)
+        {
+            _simulationService = simulationService;
+        }
+
         [HttpPost("tick")]
         public ActionResult<List<RobotDetailsDto>> Tick()
         {
-            // Dummy implementation of the tick. Later, this should use the RobotSimulationService to actually move robots.
-            // Currently, we just mock the return value. 
-
-            return Ok(new List<RobotDetailsDto>()); 
+            var robots = _simulationService.Tick();
+            return Ok(robots);
         }
 
         [HttpPost("reset")]
         public ActionResult<SimulationResetResponseDto> Reset()
         {
-            return Ok(new SimulationResetResponseDto
-            {
-                Success = true,
-                Message = "Simulation reset completely.",
-                Robots = new List<RobotDetailsDto>()
-                // A Warehouse részt is itt kellene visszaadni (üres térkép, stb.)
-            });
+            var result = _simulationService.ResetSimulation();
+            return Ok(result);
         }
     }
 }
