@@ -2,12 +2,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:RuntimeTerror.Client"
              xmlns:selectors="clr-namespace:RuntimeTerror.Client.Selectors"
-             x:Class="RobotClient.MainPage"
-             Title="Runtime Terror - Robot Szimulátor">
+             x:Class="RobotClient.MainPage">
 
     <ContentPage.Resources>
         <ResourceDictionary>
             <local:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+            <local:IncrementOneConverter x:Key="IncrementOneConverter" />
 
             <!-- Data Templates for Robot List -->
             <DataTemplate x:Key="NormalRobotTemplate">
@@ -20,7 +20,7 @@
             </DataTemplate>
 
             <DataTemplate x:Key="WarningRobotTemplate">
-                <ContentView Padding="10,8" BackgroundColor="#4A4A00">
+                <ContentView Padding="10,8" BackgroundColor="{StaticResource WarningBackgroundColor}">
                     <HorizontalStackLayout Spacing="10">
                         <Ellipse WidthRequest="10" HeightRequest="10" Fill="Yellow" VerticalOptions="Center"/>
                         <Label Text="{Binding DisplayName}" TextColor="Yellow" FontAttributes="Bold" VerticalOptions="Center" LineBreakMode="TailTruncation" />
@@ -29,7 +29,7 @@
             </DataTemplate>
 
             <DataTemplate x:Key="ErrorRobotTemplate">
-                <ContentView Padding="10,8" BackgroundColor="#4A0000">
+                <ContentView Padding="10,8" BackgroundColor="{StaticResource ErrorBackgroundColor}">
                     <HorizontalStackLayout Spacing="10">
                         <Ellipse WidthRequest="10" HeightRequest="10" Fill="Red" VerticalOptions="Center"/>
                         <Label Text="{Binding DisplayName}" TextColor="#FF6B6B" FontAttributes="Bold" VerticalOptions="Center" LineBreakMode="TailTruncation" />
@@ -48,31 +48,39 @@
         <local:MainViewModel />
     </ContentPage.BindingContext>
 
-    <Grid ColumnDefinitions="4*, 6*" RowDefinitions="60, *, 220" ColumnSpacing="10" RowSpacing="10" Padding="10" BackgroundColor="#121212">
+    <Grid ColumnDefinitions="5*, 6*" RowDefinitions="50, *, 190" ColumnSpacing="8" RowSpacing="8" Padding="8,4,8,8" BackgroundColor="#121212">
         
         <!-- Project name -->
-        <Border Grid.Row="0" Grid.Column="0" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
-            <Label Text="Runtime Terror" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" TextColor="White" />
+        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource PanelStyle}">
+            <Label Text="Runtime Terror - Robot simulator" FontAttributes="Bold" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center" TextColor="{StaticResource PrimaryDark}" />
         </Border>
 
         <!-- General controls -->
-        <Border Grid.Row="0" Grid.Column="1" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
-            <HorizontalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="20">
-                <Label Text="General controls" FontAttributes="Bold" VerticalOptions="Center" Margin="0,0,20,0" TextColor="#BDBDBD"/>
-                <Button Text="{Binding SimulationButtonText}" Command="{Binding ToggleSimulationCommand}"/>
-                <Button Text="Reset" Command="{Binding ResetSimulationCommand}"/>
-                <Button Text="Simple/Detailed view" />
-            </HorizontalStackLayout>
+        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource PanelStyle}">
+            <Grid ColumnDefinitions="*,2*">
+                <Label Grid.Column="0" Text="General controls" Style="{StaticResource PanelNameLabelStyle}" VerticalOptions="Center"/>
+                <HorizontalStackLayout Grid.Column="1" HorizontalOptions="End" VerticalOptions="Center" Spacing="10" Margin="0,0,10,0">
+                    <Button Text="{Binding SimulationButtonText}" Command="{Binding ToggleSimulationCommand}" WidthRequest="80" Style="{StaticResource StartButtonStyle}">
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding IsSimulationRunning}" Value="True">
+                                <Setter Property="Style" Value="{StaticResource StopButtonStyle}" />
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+                    <Button Text="Reset" Command="{Binding ResetSimulationCommand}" WidthRequest="80"/>
+                    <Button Text="Simple/Detailed view" Command="{Binding ToggleViewCommand}" />
+                </HorizontalStackLayout>
+            </Grid>
         </Border>
 
         <!-- Robot list and Toggleable info -->
-        <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="*, Auto" RowSpacing="10">
+        <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="5*, 4*" RowSpacing="8">
             <!-- Robot list -->
-            <Border Grid.Row="0" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
+            <Border Grid.Row="0" Grid.RowSpan="{Binding IsSimpleView, Converter={StaticResource IncrementOneConverter}}" Style="{StaticResource PanelStyle}">
                 <Grid RowDefinitions="Auto, *">
-                    <Label Grid.Row="0" Text="Robot list" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
+                    <Label Grid.Row="0" Text="Robot list" Style="{StaticResource PanelNameLabelStyle}"/>
                     <HorizontalStackLayout Grid.Row="0" HorizontalOptions="End" Spacing="5" Margin="5">
-                        <Entry Placeholder="Name" Text="{Binding InputNewName}" WidthRequest="100" />
+                        <Entry Placeholder="Name" Text="{Binding InputNewName}" WidthRequest="110" />
                         <Button Text="Add" Command="{Binding AddRobotCommand}" Padding="5,0"/>
                         <Button Text="Rename" Command="{Binding RenameRobotCommand}" Padding="5,0"/>
                         <Button Text="Remove" Command="{Binding RemoveRobotCommand}" Padding="5,0"/>
@@ -84,25 +92,27 @@
             </Border>
 
             <!-- Toggleable detailed informations -->
-            <Border Grid.Row="1" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8" HeightRequest="150" IsVisible="True">
-                <ScrollView>
-                    <VerticalStackLayout Margin="10">
-                        <Label Text="Detailed informations for selected robot" FontAttributes="Bold" TextColor="#BDBDBD"/>
-                        <Label Text="{Binding SelectedRobot.DisplayName, StringFormat='Name: {0}'}" TextColor="White" Margin="0,5,0,0"/>
-                        <Label Text="{Binding SelectedRobot.State, StringFormat='State: {0}'}" TextColor="White"/>
-                        <Label Text="{Binding SelectedRobot.BatteryLevel, StringFormat='Battery: {0}%'}" TextColor="White"/>
-                        <Label Text="{Binding SelectedRobot.DiagnosticLevel, StringFormat='Diagnostics: {0}'}" TextColor="White"/>
-                        <Label Text="{Binding SelectedRobot.LastErrorMessage, StringFormat='Last Error: {0}'}" TextColor="Red"/>
-                        <Label Text="No robot selected." TextColor="Gray" IsVisible="{Binding HasSelectedRobot, Converter={x:StaticResource InvertedBoolConverter}}" Margin="0,5,0,0"/>
-                    </VerticalStackLayout>
-                </ScrollView>
-            </Border>
+            <Border Grid.Row="1" Style="{StaticResource PanelStyle}" IsVisible="{Binding IsSimpleView, Converter={x:StaticResource InvertedBoolConverter}}">
+                <Grid RowDefinitions="Auto, *">
+                    <Label Grid.Row="0" Text="Detailed informations for selected robot" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
+                    <ScrollView Grid.Row="1">
+                        <VerticalStackLayout Margin="10,0,10,10">
+                            <Label Text="No robot selected." TextColor="Gray" IsVisible="{Binding HasSelectedRobot, Converter={x:StaticResource InvertedBoolConverter}}" Margin="0,5,0,0"/>
+                            <Label Text="{Binding SelectedRobot.DisplayName, StringFormat='Name: {0}'}" TextColor="White" IsVisible="{Binding HasSelectedRobot}" Margin="0,0,0,0"/>
+                            <Label Text="{Binding SelectedRobot.State, StringFormat='State: {0}'}" TextColor="White" IsVisible="{Binding HasSelectedRobot}"/>
+                            <Label Text="{Binding SelectedRobot.BatteryLevel, StringFormat='Battery: {0}%'}" TextColor="White" IsVisible="{Binding HasSelectedRobot}"/>
+                            <Label Text="{Binding SelectedRobot.DiagnosticLevel, StringFormat='Diagnostics: {0}'}" TextColor="White" IsVisible="{Binding HasSelectedRobot}"/>
+                            <Label Text="{Binding SelectedRobot.LastErrorMessage, StringFormat='Last Error: {0}'}" TextColor="Red" IsVisible="{Binding HasSelectedRobot}"/>
+                        </VerticalStackLayout>
+                    </ScrollView>
+                </Grid>
+            </Border> 
         </Grid>
 
         <!-- Map -->
-        <Border Grid.Row="1" Grid.Column="1" BackgroundColor="#161616" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
+        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource PanelStyle}">
             <Grid>
-                <Label Text="Map" FontAttributes="Bold" Margin="10" ZIndex="1" TextColor="#BDBDBD"/>
+                <Label Text="Map" Style="{StaticResource PanelNameLabelStyle}" Margin="10" ZIndex="1"/>
                 <ScrollView Orientation="Both" HorizontalOptions="Center" VerticalOptions="Center">
                     <AbsoluteLayout WidthRequest="400" HeightRequest="280">
                         <!-- Térkép Cella réteg -->
@@ -140,36 +150,33 @@
         </Border>
 
         <!-- Robot movement and diagnostic controls -->
-        <Grid Grid.Row="2" Grid.Column="0" ColumnDefinitions="6*, 4*" ColumnSpacing="10" BackgroundColor="Transparent">
+        <Grid Grid.Row="2" Grid.Column="0" ColumnDefinitions="6*, 5*" ColumnSpacing="8" BackgroundColor="Transparent">
             <!-- Movement -->
-            <Border Grid.Column="0" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
-                <Grid RowDefinitions="Auto, *">
-                    <Label Grid.Row="0" Text="Robot movement controls" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
-                    <VerticalStackLayout Grid.Row="1" Spacing="5" Margin="10,0,10,10">
-                        <HorizontalStackLayout Spacing="5">
-                            <Button Text="Start" Command="{Binding ResumeRobotCommand}" />
-                            <Button Text="Pause" Command="{Binding PauseRobotCommand}" />
-                        </HorizontalStackLayout>
-                        <HorizontalStackLayout Spacing="5">
-                            <Button Text="To Charger" Command="{Binding MoveToChargerCommand}" />
-                            <Button Text="To Service" Command="{Binding MoveToServiceCommand}" />
-                        </HorizontalStackLayout>
-                        <HorizontalStackLayout Spacing="5">
-                            <Entry Placeholder="X" Text="{Binding ManualTargetX}" WidthRequest="40" Keyboard="Numeric"/>
-                            <Entry Placeholder="Y" Text="{Binding ManualTargetY}" WidthRequest="40" Keyboard="Numeric"/>
-                            <Button Text="Set" Command="{Binding SetLocationCommand}" />
-                        </HorizontalStackLayout>
-                    </VerticalStackLayout>
+            <Border Grid.Column="0" BackgroundColor="{StaticResource PanelBackgroundColor}" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
+                <Grid RowDefinitions="Auto, *, *, *" ColumnDefinitions="2*,3*">
+                    <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"  Text="Robot movement controls" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
+                    <Button Grid.Row="1" Grid.Column="0" Text="Start" Command="{Binding ResumeRobotCommand}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="2" Grid.Column="0" Text="Pause" Command="{Binding PauseRobotCommand}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="1" Grid.Column="1" Text="To Charger" Command="{Binding MoveToChargerCommand}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="2" Grid.Column="1" Text="To Service" Command="{Binding MoveToServiceCommand}" Margin="5,5,5,5"/>
+                    <HorizontalStackLayout Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label Text="X:" VerticalOptions="Center"/>
+                        <Entry Placeholder="X" Text="{Binding ManualTargetX}" WidthRequest="40" Keyboard="Numeric"/>
+                        <Label Text="Y:" VerticalOptions="Center"/>
+                        <Entry Placeholder="Y" Text="{Binding ManualTargetY}" WidthRequest="40" Keyboard="Numeric"/>
+                        <Button Text="Set target" Command="{Binding SetLocationCommand}"/>
+                    </HorizontalStackLayout>
+                    
                 </Grid>
             </Border>
 
             <!-- Diagnostics Controls -->
-            <Border Grid.Column="1" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
+            <Border Grid.Column="1" BackgroundColor="{StaticResource PanelBackgroundColor}" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
                 <Grid RowDefinitions="Auto, *">
-                    <Label Grid.Row="0" Text="Robot diagnostic controls" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
-                    <VerticalStackLayout Grid.Row="1" Spacing="5" Margin="10,0,10,10">
-                        <Button Text="Clear warning" Command="{Binding ClearWarningCommand}" />
-                        <Button Text="Fix error" Command="{Binding FixErrorCommand}" />
+                    <Label Grid.Row="0" Text="Robot diagnostic controls" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
+                    <VerticalStackLayout Grid.Row="1" Spacing="10" Margin="10,0,10,10" VerticalOptions="Center">
+                        <Button Text="Clear warning" Command="{Binding ClearWarningCommand}" TextColor="Yellow" BackgroundColor="{StaticResource WarningBackgroundColor}"/>
+                        <Button Text="Fix error" Command="{Binding FixErrorCommand}" TextColor="Red" BackgroundColor="{StaticResource ErrorBackgroundColor}"/>
                         <Button Text="Simulate fault" Command="{Binding SimulateFaultCommand}" />
                     </VerticalStackLayout>
                 </Grid>
@@ -177,9 +184,9 @@
         </Grid>
 
         <!-- Diagnostics App Wide -->
-        <Border Grid.Row="2" Grid.Column="1" BackgroundColor="#1E1E1E" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
+        <Border Grid.Row="2" Grid.Column="1" BackgroundColor="{StaticResource PanelBackgroundColor}" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
             <Grid RowDefinitions="Auto, *">
-                <Label Grid.Row="0" Text="Diagnostics (errors, warnings)" FontAttributes="Bold" Margin="10,10,10,5" TextColor="#BDBDBD"/>
+                <Label Grid.Row="0" Text="Diagnostics (errors, warnings)" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
                 <ScrollView Grid.Row="1" Margin="10,0,10,10">
                     <VerticalStackLayout>
                         <Label Text="{Binding AppMessage}" TextColor="#FF6B6B" />

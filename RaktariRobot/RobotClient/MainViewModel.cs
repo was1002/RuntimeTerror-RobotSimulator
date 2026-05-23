@@ -46,6 +46,22 @@ namespace RuntimeTerror.Client
         
         public string SimulationButtonText => IsSimulationRunning ? "Stop" : "Start";
 
+        // --- View State ---
+        private bool _isSimpleView = true;
+        public bool IsSimpleView
+        {
+            get => _isSimpleView;
+            set
+            {
+                if (_isSimpleView != value)
+                {
+                    _isSimpleView = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsSimpleView));
+                }
+            }
+        }
+
         private string _appMessage = "";
         public string AppMessage
         {
@@ -63,6 +79,7 @@ namespace RuntimeTerror.Client
         // --- Commands ---
         public ICommand ToggleSimulationCommand { get; }
         public ICommand ResetSimulationCommand { get; }
+        public ICommand ToggleViewCommand { get; }
         public ICommand AddRobotCommand { get; }
         public ICommand RemoveRobotCommand { get; }
         public ICommand RenameRobotCommand { get; }
@@ -81,6 +98,8 @@ namespace RuntimeTerror.Client
         {
             ToggleSimulationCommand = new Command(ToggleSimulation);
             ResetSimulationCommand = new Command(async () => await ResetSimulation());
+            ToggleViewCommand = new Command(ToggleView);
+
             AddRobotCommand = new Command(async () => await AddRobot());
             RemoveRobotCommand = new Command(async () => await ExecuteRobotCommand("DELETE", ""));
             RenameRobotCommand = new Command(async () => await RenameRobot());
@@ -377,6 +396,11 @@ namespace RuntimeTerror.Client
                 if (robots != null) UpdateRobotsData(robots);
             }
             catch { /* Ignore async refresh errors for brevity */ }
+        }
+
+        private void ToggleView()
+        {
+            IsSimpleView = !IsSimpleView;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

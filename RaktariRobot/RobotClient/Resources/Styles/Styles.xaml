@@ -4,6 +4,35 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
+    <!-- Main page styles-->
+    
+    <Style x:Key="PanelStyle" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource PanelBackgroundColor}" />
+        <Setter Property="Stroke" Value="{StaticResource PanelStrokeColor}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 8" />
+    </Style>
+
+    <Style x:Key="PanelNameLabelStyle" TargetType="Label">
+        <Setter Property="TextColor" Value="{StaticResource PanelNameTextColor}" />
+        <Setter Property="FontFamily" Value="OpenSansRegular"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontAttributes" Value="Bold"/>
+        <Setter Property="Margin" Value="10,10,10,5"/>
+    </Style>
+
+    <Style x:Key="StartButtonStyle" TargetType="Button">
+        <Setter Property="TextColor" Value="{StaticResource GreenTextColor}"/>
+        <Setter Property="BackgroundColor" Value="{StaticResource GreenBackgroundColor}"/>
+    </Style>
+
+    <Style x:Key="StopButtonStyle" TargetType="Button">
+        <Setter Property="TextColor" Value="Red"/>
+        <Setter Property="BackgroundColor" Value="{StaticResource ErrorBackgroundColor}"/>
+    </Style>
+
+    <!-- End of main page styles -->
+    
     <Style TargetType="ActivityIndicator">
         <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}" />
     </Style>
@@ -31,7 +60,7 @@
         <Setter Property="BorderWidth" Value="0"/>
         <Setter Property="CornerRadius" Value="8"/>
         <Setter Property="Padding" Value="14,10"/>
-        <Setter Property="MinimumHeightRequest" Value="44"/>
+        <Setter Property="Height" Value="40"/>
         <Setter Property="MinimumWidthRequest" Value="44"/>
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
