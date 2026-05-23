@@ -8,28 +8,32 @@ namespace RuntimeTerror.Client
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is int intValue)
+            switch (value)
             {
-                return intValue + 1;
+                case int intValue:
+                    return intValue + 1;
+                case bool boolValue:
+                    return boolValue ? 2 : 1;
+                case double doubleValue:
+                    return doubleValue + 1.0;
+                default:
+                    return value;
             }
-            if (value is bool boolValue)
-            {
-                return boolValue ? 2 : 1;
-            }
-            return value;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is int intValue)
+            switch (value)
             {
-                return intValue - 1;
+                case int intValue:
+                    return intValue - 1;
+                case bool boolValue:
+                    return boolValue ? 0 : -1;
+                case double doubleValue:
+                    return doubleValue - 1.0;
+                default:
+                    return value;
             }
-            if (value is bool boolValue)
-            {
-                return boolValue ? 0 : -1;
-            }
-            return value;
         }
     }
 }
