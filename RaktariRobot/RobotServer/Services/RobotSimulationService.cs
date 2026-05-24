@@ -30,6 +30,33 @@ namespace RobotServer.Services
         }
 
         // ------------------------------------------------------------
+        // GET STATISTICS
+        // ------------------------------------------------------------
+
+        public RobotStatisticsDto GetRobotStatistics()
+        {
+            return new RobotStatisticsDto
+            {
+                TotalRobots = _robots.Count,
+
+                ErrorRobots = _robots.Count(robot =>
+                    robot.State == RobotState.Error ||
+                    robot.DiagnosticLevel == DiagnosticLevel.Error),
+
+                WarningRobots = _robots.Count(robot =>
+                    robot.DiagnosticLevel == DiagnosticLevel.Warning ||
+                    robot.DiagnosticLevel == DiagnosticLevel.CriticalWarning),
+
+                PausedRobots = _robots.Count(robot =>
+                    robot.State == RobotState.Paused),
+
+                AverageBatteryLevel = _robots.Count == 0
+                    ? 0
+                    : _robots.Average(robot => robot.BatteryLevel)
+            };
+        }
+
+        // ------------------------------------------------------------
         // CREATE ROBOT
         // ------------------------------------------------------------
 
