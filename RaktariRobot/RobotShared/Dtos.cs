@@ -71,6 +71,17 @@
         public int? RobotId { get; set; }
     }
 
+    public class RobotStatisticsDto
+    {
+        public int TotalRobots { get; set; }
+
+        public int ErrorRobots { get; set; }
+        public int WarningRobots { get; set; }
+        public int PausedRobots { get; set; }
+
+        public double AverageBatteryLevel { get; set; }
+    }
+
     public class SelfTestResultDto
     {
         public bool Success { get; set; }
