@@ -472,9 +472,9 @@ The Server generates the `RobotId` automatically.
 Example:
 
 ```text
-ROBOT-001
-ROBOT-002
-ROBOT-003
+RobotId = 1, DisplayName = "ROBOT-001"
+RobotId = 2, DisplayName = "ROBOT-002"
+RobotId = 3, DisplayName = "ROBOT-003"
 ```
 
 ## RenameRobotRequestDto
@@ -511,7 +511,7 @@ public class RobotCommandResultDto
 {
     public bool Success { get; set; }
     public string Message { get; set; } = "";
-    public string? RobotId { get; set; }
+    public int? RobotId { get; set; }
 }
 ```
 

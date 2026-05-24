@@ -7,11 +7,11 @@ namespace RobotServer.Controllers
 {
     [ApiController]
     [Route("api/robots")]
-    public class RobotsController : ControllerBase
+    public class RobotController : ControllerBase
     {
         private readonly RobotSimulationService _simulationService;
 
-        public RobotsController(RobotSimulationService simulationService)
+        public RobotController(RobotSimulationService simulationService)
         {
             _simulationService = simulationService;
         }
