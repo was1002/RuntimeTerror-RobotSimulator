@@ -22,6 +22,14 @@ namespace RobotServer.Controllers
             return Ok(_simulationService.GetRobots());
         }
 
+        [HttpGet("statistics")]
+        public ActionResult<RobotStatisticsDto> GetRobotStatistics()
+        {
+            var statistics = _simulationService.GetRobotStatistics();
+
+            return Ok(statistics);
+        }
+
         [HttpPost]
         public ActionResult<RobotCommandResultDto> CreateRobot([FromBody] CreateRobotRequestDto request)
         {
