@@ -71,6 +71,26 @@
         public int? RobotId { get; set; }
     }
 
+    public class SelfTestResultDto
+    {
+        public bool Success { get; set; }
+        public bool RobotExists { get; set; }
+
+        public int? RobotId { get; set; }
+        public string DisplayName { get; set; } = "";
+
+        public string Summary { get; set; } = "";
+
+        public List<SelfTestItemDto> Checks { get; set; } = new();
+    }
+
+    public class SelfTestItemDto
+    {
+        public string Name { get; set; } = "";
+        public bool Passed { get; set; }
+        public string Message { get; set; } = "";
+    }
+
     public class SimulationResetResponseDto
     {
         public bool Success { get; set; }
