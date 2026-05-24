@@ -1,4 +1,7 @@
-﻿using RobotServer.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using RobotServer.Models;
 using RobotShared;
 
 namespace RobotServer.Services
@@ -45,13 +48,10 @@ namespace RobotServer.Services
                     ? defaultDisplayName
                     : request.DisplayName,
 
-                State = RobotState.Idle,
+                // New robots should stand still until Resume is pressed.
+                State = RobotState.Paused,
 
-                Position = new PositionDto
-                {
-                    X = warehouse.SpawnPosition.X,
-                    Y = warehouse.SpawnPosition.Y
-                },
+                Position = CopyPosition(warehouse.SpawnPosition),
 
                 TargetPosition = null,
                 TargetShelfId = null,
@@ -74,7 +74,7 @@ namespace RobotServer.Services
             return new RobotCommandResultDto
             {
                 Success = true,
-                Message = "Robot created successfully.",
+                Message = "Robot created successfully. Press resume to start autonomous operation.",
                 RobotId = robot.RobotId
             };
         }
@@ -159,6 +159,8 @@ namespace RobotServer.Services
             }
 
             robot.State = RobotState.Paused;
+            robot.TargetPosition = null;
+            robot.TargetShelfId = null;
 
             return new RobotCommandResultDto
             {
@@ -194,7 +196,7 @@ namespace RobotServer.Services
             return new RobotCommandResultDto
             {
                 Success = true,
-                Message = "Robot resumed successfully.",
+                Message = "Robot resumed successfully. Autonomous operation continues.",
                 RobotId = robotId
             };
         }
@@ -226,7 +228,7 @@ namespace RobotServer.Services
             return new RobotCommandResultDto
             {
                 Success = true,
-                Message = "Robot target set to charger. Movement starts on next tick.",
+                Message = "Robot target set to charger.",
                 RobotId = robotId
             };
         }
@@ -254,7 +256,7 @@ namespace RobotServer.Services
             return new RobotCommandResultDto
             {
                 Success = true,
-                Message = "Robot target set to service point. Movement starts on next tick.",
+                Message = "Robot target set to service point.",
                 RobotId = robotId
             };
         }
@@ -273,15 +275,13 @@ namespace RobotServer.Services
                 return CannotMoveBecauseOfError(robotId);
             }
 
-            var warehouse = _warehouseService.GetWarehouse();
+            var targetPosition = new PositionDto
+            {
+                X = request.X,
+                Y = request.Y
+            };
 
-            bool isInsideWarehouse =
-                request.X >= 0 &&
-                request.X < warehouse.Width &&
-                request.Y >= 0 &&
-                request.Y < warehouse.Height;
-
-            if (!isInsideWarehouse)
+            if (!_warehouseService.IsInsideWarehouse(targetPosition))
             {
                 return new RobotCommandResultDto
                 {
@@ -291,19 +291,14 @@ namespace RobotServer.Services
                 };
             }
 
-            robot.TargetPosition = new PositionDto
-            {
-                X = request.X,
-                Y = request.Y
-            };
-
+            robot.TargetPosition = targetPosition;
             robot.TargetShelfId = null;
             robot.State = RobotState.ManualMoving;
 
             return new RobotCommandResultDto
             {
                 Success = true,
-                Message = "Manual target position set. Movement starts on next tick.",
+                Message = "Manual target position set.",
                 RobotId = robotId
             };
         }
@@ -331,15 +326,9 @@ namespace RobotServer.Services
                 };
             }
 
-            if (robot.MotorStatus == ComponentStatus.Warning)
-            {
-                robot.MotorStatus = ComponentStatus.Normal;
-            }
-
-            if (robot.SensorStatus == ComponentStatus.Warning)
-            {
-                robot.SensorStatus = ComponentStatus.Normal;
-            }
+            robot.MotorStatus = ComponentStatus.Normal;
+            robot.SensorStatus = ComponentStatus.Normal;
+            robot.LastErrorMessage = null;
 
             UpdateDiagnosticLevel(robot);
 
@@ -365,12 +354,14 @@ namespace RobotServer.Services
             robot.DiagnosticLevel = DiagnosticLevel.Normal;
             robot.LastErrorMessage = null;
 
+            robot.TargetPosition = null;
+            robot.TargetShelfId = null;
             robot.State = RobotState.Idle;
 
             return new RobotCommandResultDto
             {
                 Success = true,
-                Message = "Error fixed successfully.",
+                Message = "Error fixed successfully. Robot continues operation.",
                 RobotId = robotId
             };
         }
@@ -447,24 +438,38 @@ namespace RobotServer.Services
                 return;
             }
 
-            // Charging logic
             if (robot.State == RobotState.Charging)
             {
                 ChargeRobot(robot);
+                TryGenerateRandomFault(robot);
+                UpdateDiagnosticLevel(robot);
                 return;
             }
 
-            // If robot has no target, choose next autonomous task
+            // Manual movement has a special rule:
+            // after reaching the manual target, the robot stays there until Resume or another MoveToLocation command.
+            if (robot.State == RobotState.ManualMoving && robot.TargetPosition == null)
+            {
+                TryGenerateRandomFault(robot);
+                UpdateDiagnosticLevel(robot);
+                return;
+            }
+
+            ApplyLowBatteryRule(robot);
+
             if (robot.TargetPosition == null)
             {
                 AssignNextAutonomousTarget(robot);
             }
 
-            // Move one step toward target
             if (robot.TargetPosition != null)
             {
-                MoveOneStepTowardTarget(robot);
-                DecreaseBattery(robot);
+                bool moved = MoveOneStepTowardTarget(robot);
+
+                if (moved)
+                {
+                    DecreaseBattery(robot);
+                }
 
                 if (HasReachedTarget(robot))
                 {
@@ -472,9 +477,7 @@ namespace RobotServer.Services
                 }
             }
 
-            // Optional random fault generation
             TryGenerateRandomFault(robot);
-
             UpdateDiagnosticLevel(robot);
         }
 
@@ -504,7 +507,6 @@ namespace RobotServer.Services
         {
             var warehouse = _warehouseService.GetWarehouse();
 
-            // Low battery rule
             if (robot.BatteryLevel <= 20 && !robot.CarryingLoad)
             {
                 robot.LowBatteryWarning = true;
@@ -514,7 +516,6 @@ namespace RobotServer.Services
                 return;
             }
 
-            // If carrying load, go to dropoff
             if (robot.CarryingLoad)
             {
                 robot.TargetPosition = CopyPosition(warehouse.DropoffPosition);
@@ -523,7 +524,6 @@ namespace RobotServer.Services
                 return;
             }
 
-            // Otherwise choose random shelf
             if (warehouse.Shelves.Count > 0)
             {
                 var shelf = warehouse.Shelves[_random.Next(warehouse.Shelves.Count)];
@@ -532,6 +532,35 @@ namespace RobotServer.Services
                 robot.TargetShelfId = shelf.ShelfId;
                 robot.State = RobotState.MovingToShelf;
             }
+        }
+
+        private void ApplyLowBatteryRule(Robot robot)
+        {
+            if (robot.BatteryLevel > 20)
+            {
+                return;
+            }
+
+            robot.LowBatteryWarning = true;
+
+            if (robot.CarryingLoad)
+            {
+                return;
+            }
+
+            if (robot.State == RobotState.MovingToCharger ||
+                robot.State == RobotState.Charging ||
+                robot.State == RobotState.MovingToService ||
+                robot.State == RobotState.ManualMoving)
+            {
+                return;
+            }
+
+            var warehouse = _warehouseService.GetWarehouse();
+
+            robot.TargetPosition = CopyPosition(warehouse.ChargerPosition);
+            robot.TargetShelfId = null;
+            robot.State = RobotState.MovingToCharger;
         }
 
         private void HandleArrival(Robot robot)
@@ -549,6 +578,7 @@ namespace RobotServer.Services
 
                 case RobotState.MovingToDropoff:
                     robot.CarryingLoad = false;
+                    robot.TargetShelfId = null;
 
                     if (robot.BatteryLevel <= 20)
                     {
@@ -566,11 +596,13 @@ namespace RobotServer.Services
 
                 case RobotState.MovingToCharger:
                     robot.TargetPosition = null;
+                    robot.TargetShelfId = null;
                     robot.State = RobotState.Charging;
                     break;
 
                 case RobotState.MovingToService:
                     robot.TargetPosition = null;
+                    robot.TargetShelfId = null;
 
                     robot.MotorStatus = ComponentStatus.Normal;
                     robot.SensorStatus = ComponentStatus.Normal;
@@ -582,7 +614,12 @@ namespace RobotServer.Services
 
                 case RobotState.ManualMoving:
                     robot.TargetPosition = null;
-                    robot.State = RobotState.Idle;
+                    robot.TargetShelfId = null;
+
+                    // Important:
+                    // stay in ManualMoving so the robot does not automatically continue.
+                    // ResumeRobot() will set it back to Idle.
+                    robot.State = RobotState.ManualMoving;
                     break;
             }
         }
@@ -591,29 +628,43 @@ namespace RobotServer.Services
         // MOVEMENT / BATTERY
         // ------------------------------------------------------------
 
-        private void MoveOneStepTowardTarget(Robot robot)
+        private bool MoveOneStepTowardTarget(Robot robot)
         {
             if (robot.TargetPosition == null)
             {
-                return;
+                return false;
+            }
+
+            if (HasReachedTarget(robot))
+            {
+                return false;
             }
 
             if (robot.Position.X < robot.TargetPosition.X)
             {
                 robot.Position.X++;
+                return true;
             }
-            else if (robot.Position.X > robot.TargetPosition.X)
+
+            if (robot.Position.X > robot.TargetPosition.X)
             {
                 robot.Position.X--;
+                return true;
             }
-            else if (robot.Position.Y < robot.TargetPosition.Y)
+
+            if (robot.Position.Y < robot.TargetPosition.Y)
             {
                 robot.Position.Y++;
+                return true;
             }
-            else if (robot.Position.Y > robot.TargetPosition.Y)
+
+            if (robot.Position.Y > robot.TargetPosition.Y)
             {
                 robot.Position.Y--;
+                return true;
             }
+
+            return false;
         }
 
         private bool HasReachedTarget(Robot robot)
@@ -651,6 +702,8 @@ namespace RobotServer.Services
             {
                 robot.BatteryLevel = 100;
                 robot.LowBatteryWarning = false;
+                robot.TargetPosition = null;
+                robot.TargetShelfId = null;
                 robot.State = RobotState.Idle;
             }
         }
@@ -667,8 +720,7 @@ namespace RobotServer.Services
             }
 
             // Very low chance per tick.
-            // You can modify this later.
-            int chance = _random.Next(0, 1000);
+            int chance = _random.Next(0, 1000); // <======================================= random fault chance ===============================
 
             if (chance == 1)
             {
@@ -683,13 +735,11 @@ namespace RobotServer.Services
             else if (chance == 3)
             {
                 robot.MotorStatus = ComponentStatus.Error;
-                robot.State = RobotState.Error;
                 robot.LastErrorMessage = "Random motor error.";
             }
             else if (chance == 4)
             {
                 robot.SensorStatus = ComponentStatus.Error;
-                robot.State = RobotState.Error;
                 robot.LastErrorMessage = "Random sensor error.";
             }
         }
@@ -739,6 +789,7 @@ namespace RobotServer.Services
                 State = robot.State,
 
                 Position = CopyPosition(robot.Position),
+
                 TargetPosition = robot.TargetPosition == null
                     ? null
                     : CopyPosition(robot.TargetPosition),
