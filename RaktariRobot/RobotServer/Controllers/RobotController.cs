@@ -78,6 +78,19 @@ namespace RobotServer.Controllers
             return Ok(result);
         }
 
+        [HttpPost("{robotId}/self-test")]
+        public ActionResult<SelfTestResultDto> RunSelfTest(int robotId)
+        {
+            var result = _simulationService.RunSelfTest(robotId);
+
+            if (!result.RobotExists)
+            {
+                return NotFound(result);
+            }
+
+            return Ok(result);
+        }
+
         [HttpPost("{robotId}/clear-warning")]
         public ActionResult<RobotCommandResultDto> ClearWarning(int robotId)
         {
