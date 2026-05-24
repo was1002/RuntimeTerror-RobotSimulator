@@ -366,6 +366,90 @@ namespace RobotServer.Services
             };
         }
 
+        public SelfTestResultDto RunSelfTest(int robotId)
+        {
+            var robot = FindRobot(robotId);
+
+            if (robot == null)
+            {
+                return new SelfTestResultDto
+                {
+                    Success = false,
+                    RobotExists = false,
+                    RobotId = robotId,
+                    Summary = "Self-test failed. Robot not found.",
+                    Checks = new List<SelfTestItemDto>
+            {
+                new SelfTestItemDto
+                {
+                    Name = "Robot exists",
+                    Passed = false,
+                    Message = "Robot with the given ID does not exist."
+                }
+            }
+                };
+            }
+
+            var checks = new List<SelfTestItemDto>();
+
+            checks.Add(new SelfTestItemDto
+            {
+                Name = "Robot exists",
+                Passed = true,
+                Message = "Robot found successfully."
+            });
+
+            checks.Add(new SelfTestItemDto
+            {
+                Name = "Robot state",
+                Passed = robot.State != RobotState.Error,
+                Message = robot.State == RobotState.Error
+                    ? "Robot is in Error state."
+                    : $"Robot state is {robot.State}."
+            });
+
+            checks.Add(new SelfTestItemDto
+            {
+                Name = "Motor status",
+                Passed = robot.MotorStatus != ComponentStatus.Error,
+                Message = robot.MotorStatus == ComponentStatus.Error
+                    ? "Motor has an error."
+                    : $"Motor status is {robot.MotorStatus}."
+            });
+
+            checks.Add(new SelfTestItemDto
+            {
+                Name = "Sensor status",
+                Passed = robot.SensorStatus != ComponentStatus.Error,
+                Message = robot.SensorStatus == ComponentStatus.Error
+                    ? "Sensor has an error."
+                    : $"Sensor status is {robot.SensorStatus}."
+            });
+
+            checks.Add(new SelfTestItemDto
+            {
+                Name = "Battery level",
+                Passed = robot.BatteryLevel > 20,
+                Message = robot.BatteryLevel <= 20
+                    ? $"Battery level is low: {robot.BatteryLevel}%."
+                    : $"Battery level is acceptable: {robot.BatteryLevel}%."
+            });
+
+            bool allChecksPassed = checks.All(check => check.Passed);
+
+            return new SelfTestResultDto
+            {
+                Success = allChecksPassed,
+                RobotExists = true,
+                RobotId = robot.RobotId,
+                DisplayName = robot.DisplayName,
+                Summary = allChecksPassed
+                    ? "Self-test passed. Robot is ready for operation."
+                    : "Self-test completed. One or more checks failed.",
+                Checks = checks
+            };
+        }
+
         public RobotCommandResultDto SimulateFault(int robotId)
         {
             var robot = FindRobot(robotId);
