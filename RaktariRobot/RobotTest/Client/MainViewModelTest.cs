@@ -110,7 +110,6 @@ namespace RobotTest.Client
             Assert.Contains("AppMessage", changed);
         }
 
-        // --- MainViewModel Constructor Tests ---
         [Fact]
         public void Constructor_InitializesProperties()
         {
@@ -130,6 +129,74 @@ namespace RobotTest.Client
             Assert.NotNull(vm.ClearWarningCommand);
             Assert.NotNull(vm.FixErrorCommand);
             Assert.NotNull(vm.SimulateFaultCommand);
+        }
+
+        [Fact]
+        public async Task Constructor_LoadWarehouse_InitializesMap_WhenServerReturnsWarehouse()
+        {
+            var warehouse = new WarehouseDto
+            {
+                Width = 3,
+                Height = 2,
+                SpawnPosition = new PositionDto { X = 0, Y = 0 },
+                DropoffPosition = new PositionDto { X = 1, Y = 0 },
+                ChargerPosition = new PositionDto { X = 2, Y = 0 },
+                ServicePosition = new PositionDto { X = 0, Y = 1 },
+                Shelves = new List<ShelfDto> { new ShelfDto { ShelfId = "1", Position = new PositionDto { X = 1, Y = 1 } } }
+            };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(warehouse);
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+
+            using var listener = new System.Net.HttpListener();
+            listener.Prefixes.Add("http://localhost:5090/");
+            listener.Start();
+
+            var responder = Task.Run(async () =>
+            {
+                try
+                {
+                    while (listener.IsListening)
+                    {
+                        var ctx = await listener.GetContextAsync();
+                        if (ctx.Request.HttpMethod == "GET" && ctx.Request.Url.AbsolutePath == "/api/warehouse")
+                        {
+                            ctx.Response.StatusCode = 200;
+                            ctx.Response.ContentType = "application/json";
+                            ctx.Response.ContentLength64 = bytes.Length;
+                            await ctx.Response.OutputStream.WriteAsync(bytes, 0, bytes.Length);
+                            ctx.Response.OutputStream.Close();
+                        }
+                        else
+                        {
+                            ctx.Response.StatusCode = 404;
+                            ctx.Response.Close();
+                        }
+                    }
+                }
+                catch (ObjectDisposedException) { /* listener stopped */ }
+            });
+
+            try
+            {
+                // Construct the VM (its constructor calls LoadWarehouse and will hit our listener)
+                var vm = new RuntimeTerror.Client.MainViewModel();
+
+                // Wait until MapCells have been populated or timeout
+                var expected = warehouse.Width * warehouse.Height;
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                while (vm.MapCells.Count != expected && sw.ElapsedMilliseconds < 5000)
+                {
+                    await Task.Delay(50);
+                }
+
+                Assert.Equal(expected, vm.MapCells.Count);
+            }
+            finally
+            {
+                listener.Stop();
+                await Task.WhenAny(responder, Task.Delay(100)); // let responder finish
+            }
         }
     }
 }
