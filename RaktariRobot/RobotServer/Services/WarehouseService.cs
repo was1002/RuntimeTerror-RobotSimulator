@@ -26,5 +26,16 @@ namespace RobotServer.Services
                 }
             };
         }
+
+        public bool IsInsideWarehouse(PositionDto position)
+        {
+            var warehouse = GetWarehouse();
+
+            return position.X >= 0 &&
+                   position.X < warehouse.Width &&
+                   position.Y >= 0 &&
+                   position.Y < warehouse.Height;
+        }
+
     }
 }
