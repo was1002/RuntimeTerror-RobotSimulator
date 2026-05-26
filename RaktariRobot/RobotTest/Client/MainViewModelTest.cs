@@ -180,7 +180,7 @@ namespace RobotTest.Client
             try
             {
                 // Construct the VM (its constructor calls LoadWarehouse and will hit our listener)
-                var vm = new RuntimeTerror.Client.MainViewModel();
+                var vm = new MainViewModel();
 
                 // Wait until MapCells have been populated or timeout
                 var expected = warehouse.Width * warehouse.Height;

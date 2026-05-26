@@ -50,7 +50,7 @@
         <local:MainViewModel />
     </ContentPage.BindingContext>
 
-    <Grid ColumnDefinitions="5*, 6*" RowDefinitions="50, *, 190" ColumnSpacing="8" RowSpacing="8" Padding="8,4,8,8" BackgroundColor="#121212">
+    <Grid ColumnDefinitions="5*, 6*" RowDefinitions="50, *, 215" ColumnSpacing="8" RowSpacing="8" Padding="8,4,8,8" BackgroundColor="#121212">
         
         <!-- Project name -->
         <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource PanelStyle}">
@@ -59,7 +59,7 @@
 
         <!-- General controls -->
         <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource PanelStyle}">
-            <Grid ColumnDefinitions="*,2*">
+            <Grid ColumnDefinitions="*,3*">
                 <Label Grid.Column="0" Text="General controls" Style="{StaticResource PanelNameLabelStyle}" VerticalOptions="Center"/>
                 <HorizontalStackLayout Grid.Column="1" HorizontalOptions="End" VerticalOptions="Center" Spacing="10" Margin="0,0,10,0">
                     <Button Text="{Binding SimulationButtonText}" Command="{Binding ToggleSimulationCommand}" WidthRequest="80" Style="{StaticResource StartButtonStyle}">
