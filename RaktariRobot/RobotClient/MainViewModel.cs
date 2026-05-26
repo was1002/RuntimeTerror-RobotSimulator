@@ -93,13 +93,14 @@ namespace RuntimeTerror.Client
         public ICommand ClearWarningCommand { get; }
         public ICommand FixErrorCommand { get; }
         public ICommand SimulateFaultCommand { get; }
+        public ICommand RunSelfTestCommand { get; }
+        public ICommand OpenStatisticsCommand { get; }
 
         public MainViewModel()
         {
             ToggleSimulationCommand = new Command(ToggleSimulation);
             ResetSimulationCommand = new Command(async () => await ResetSimulation());
             ToggleViewCommand = new Command(ToggleView);
-
             AddRobotCommand = new Command(async () => await AddRobot());
             RemoveRobotCommand = new Command(async () => await ExecuteRobotCommand("DELETE", ""));
             RenameRobotCommand = new Command(async () => await RenameRobot());
@@ -113,6 +114,9 @@ namespace RuntimeTerror.Client
             ClearWarningCommand = new Command(async () => await ExecuteRobotCommand("POST", "clear-warning"));
             FixErrorCommand = new Command(async () => await ExecuteRobotCommand("POST", "fix-error"));
             SimulateFaultCommand = new Command(async () => await ExecuteRobotCommand("POST", "simulate-fault"));
+            
+            RunSelfTestCommand = new Command(async () => await RunSelfTest());
+            OpenStatisticsCommand = new Command(async () => await OpenStatisticsWindow());
 
             LoadWarehouse();
         }
@@ -219,7 +223,6 @@ namespace RuntimeTerror.Client
                     MapRobots.RemoveAt(i);
             }
 
-            // Hozzáadás vagy meglévõk tulajdonságainak frissítése
             foreach (var robot in newRobotsList)
             {
                 Color robotColor = Colors.Green;
@@ -227,13 +230,11 @@ namespace RuntimeTerror.Client
                 else if (robot.State == RobotState.Paused || robot.State == RobotState.Charging) robotColor = Colors.Yellow;
                 else if (robot.State != RobotState.Idle) robotColor = Colors.Blue;
 
-                // 1. RobotsList (ide kötjük a UI listát)
                 var existingListIndex = RobotsList.ToList().FindIndex(r => r.RobotId == robot.RobotId);
                 if (existingListIndex >= 0)
                 {
                     var existingItem = RobotsList[existingListIndex];
 
-                    // Kiszámoljuk a sablon kategóriáját (0=Normál, 1=Figyelmeztetés, 2=Hiba)
                     bool isOldError = existingItem.DiagnosticLevel == DiagnosticLevel.Error || existingItem.State == RobotState.Error;
                     bool isOldWarning = !isOldError && (existingItem.DiagnosticLevel == DiagnosticLevel.Warning || existingItem.DiagnosticLevel == DiagnosticLevel.CriticalWarning);
                     int oldCategory = isOldError ? 2 : (isOldWarning ? 1 : 0);
@@ -244,13 +245,10 @@ namespace RuntimeTerror.Client
 
                     if (oldCategory != newCategory)
                     {
-                        // Ha megváltozott a hibaállapot, kicseréljük az objektumot, 
-                        // hogy a DataTemplateSelector újra kiértékelje és betöltse az új UI sablont.
                         RobotsList[existingListIndex] = new ObservableRobot(robot);
                     }
                     else
                     {
-                        // Ha csak a pozíció vagy az aksi módosult, frissítjük az értékeket villogás nélkül.
                         existingItem.UpdateFromDto(robot);
                     }
                 }
@@ -259,7 +257,6 @@ namespace RuntimeTerror.Client
                     RobotsList.Add(new ObservableRobot(robot));
                 }
 
-                // 2. MapRobots (térkép markerek)
                 var existingMarker = MapRobots.FirstOrDefault(m => m.RobotId == robot.RobotId);
                 if (existingMarker != null)
                 {
@@ -389,13 +386,53 @@ namespace RuntimeTerror.Client
 
         private async Task RefreshRobotsAsync()
         {
-            if(IsSimulationRunning) return; // If running, tick handles it
+            if(IsSimulationRunning) return; 
             try
             {
                 var robots = await _httpClient.GetFromJsonAsync<List<RobotDetailsDto>>("api/robots");
                 if (robots != null) UpdateRobotsData(robots);
             }
             catch { /* Ignore async refresh errors for brevity */ }
+        }
+
+        private async Task RunSelfTest()
+        {
+            if (SelectedRobot == null) { AppMessage = "No robot selected for self-test."; return; }
+            try
+            {
+                var response = await _httpClient.PostAsync($"api/robots/{SelectedRobot.RobotId}/self-test", null);
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<SelfTestResultDto>();
+                    if (result != null)
+                    {
+                        AppMessage = $"Self-Test ({result.DisplayName}): {result.Summary}";
+                        if (Application.Current?.Windows.Count > 0 && Application.Current.Windows[0].Page != null)
+                        {
+                            await Application.Current.Windows[0].Page.DisplayAlert("Self-Test Result", result.Summary + (result.Success ? "" : "\n\nPlease check diagnostics array."), "OK");
+                        }
+                    }
+                }
+                else
+                {
+                    AppMessage = $"Self-test failed to execute. Status: {response.StatusCode}";
+                }
+                await RefreshRobotsAsync();
+            }
+            catch (Exception ex) { AppMessage = $"Self-test error: {ex.Message}"; }
+        }
+
+        private async Task OpenStatisticsWindow()
+        {
+            var statsPage = new global::RobotClient.StatisticsPage(RobotsList);
+            if (Application.Current?.Windows.Count > 0)
+            {
+                var mainPage = Application.Current.Windows[0].Page;
+                if (mainPage != null)
+                {
+                    await mainPage.Navigation.PushModalAsync(statsPage);
+                }
+            }
         }
 
         private void ToggleView()

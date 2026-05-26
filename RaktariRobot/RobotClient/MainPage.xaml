@@ -69,6 +69,7 @@
                     </Button>
                     <Button Text="Reset" Command="{Binding ResetSimulationCommand}" WidthRequest="80"/>
                     <Button Text="Simple/Detailed view" Command="{Binding ToggleViewCommand}" />
+                    <Button Text="Statistics" Command="{Binding OpenStatisticsCommand}" BackgroundColor="MediumPurple" TextColor="White" FontAttributes="Bold"/>
                 </HorizontalStackLayout>
             </Grid>
         </Border>
@@ -174,11 +175,14 @@
             <Border Grid.Column="1" BackgroundColor="{StaticResource PanelBackgroundColor}" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
                 <Grid RowDefinitions="Auto, *">
                     <Label Grid.Row="0" Text="Robot diagnostic controls" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
-                    <VerticalStackLayout Grid.Row="1" Spacing="10" Margin="10,0,10,10" VerticalOptions="Center">
-                        <Button Text="Clear warning" Command="{Binding ClearWarningCommand}" TextColor="Yellow" BackgroundColor="{StaticResource WarningBackgroundColor}"/>
-                        <Button Text="Fix error" Command="{Binding FixErrorCommand}" TextColor="Red" BackgroundColor="{StaticResource ErrorBackgroundColor}"/>
-                        <Button Text="Simulate fault" Command="{Binding SimulateFaultCommand}" />
-                    </VerticalStackLayout>
+                    <ScrollView Grid.Row="1">
+                        <VerticalStackLayout Spacing="5" Margin="10,0,10,5" VerticalOptions="Start">
+                            <Button Text="Clear warning" Command="{Binding ClearWarningCommand}" TextColor="Yellow" BackgroundColor="{StaticResource WarningBackgroundColor}"/>
+                            <Button Text="Fix error" Command="{Binding FixErrorCommand}" TextColor="Red" BackgroundColor="{StaticResource ErrorBackgroundColor}"/>
+                            <Button Text="Simulate fault" Command="{Binding SimulateFaultCommand}" />
+                            <Button Text="Run Self-Test" Command="{Binding RunSelfTestCommand}" BackgroundColor="#1E90FF" TextColor="White" />
+                        </VerticalStackLayout>
+                    </ScrollView>
                 </Grid>
             </Border>
         </Grid>

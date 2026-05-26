@@ -75,7 +75,6 @@ namespace RobotServer.Services
                     ? defaultDisplayName
                     : request.DisplayName,
 
-                // New robots should stand still until Resume is pressed.
                 State = RobotState.Paused,
 
                 Position = CopyPosition(warehouse.SpawnPosition),
@@ -519,6 +518,52 @@ namespace RobotServer.Services
             {
                 Success = true,
                 Message = "Fault simulated successfully.",
+                RobotId = robotId
+            };
+        }
+
+        // ------------------------------------------------------------
+        // SELF TEST
+        // ------------------------------------------------------------
+
+        public RobotCommandResultDto SelfTest(int robotId)
+        {
+            var robot = FindRobot(robotId);
+
+            if (robot == null)
+            {
+                return RobotNotFound(robotId);
+            }
+
+            bool hasCriticalFailure = robot.MotorStatus == ComponentStatus.Error || robot.SensorStatus == ComponentStatus.Error;
+
+            if (hasCriticalFailure)
+            {
+                robot.LastErrorMessage = "Self-test failed: Hardware requires manual fix.";
+                return new RobotCommandResultDto
+                {
+                    Success = false,
+                    Message = "Self-test failed due to critical hardware error.",
+                    RobotId = robotId
+                };
+            }
+
+            if (robot.MotorStatus == ComponentStatus.Warning)
+                robot.MotorStatus = ComponentStatus.Normal;
+            
+            if (robot.SensorStatus == ComponentStatus.Warning)
+                robot.SensorStatus = ComponentStatus.Normal;
+
+            robot.DiagnosticLevel = DiagnosticLevel.Normal;
+            robot.LastErrorMessage = "Self-test completed. Systems nominal.";
+            
+            if (robot.State == RobotState.Error)
+                robot.State = RobotState.Idle;
+
+            return new RobotCommandResultDto
+            {
+                Success = true,
+                Message = "Self-test passed successfully. All systems nominal.",
                 RobotId = robotId
             };
         }
