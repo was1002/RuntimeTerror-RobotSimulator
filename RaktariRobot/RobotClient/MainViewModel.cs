@@ -397,8 +397,14 @@ namespace RuntimeTerror.Client
                 var response = await _httpClient.PostAsJsonAsync($"api/robots/{SelectedRobot.RobotId}/move-to-location", req);
                 if (response.IsSuccessStatusCode)
                 {
+                    AppMessageColor = Color.FromRgb(144, 238, 144);
                     AppMessage = $"Location set to {req.X}, {req.Y}.";
                     await RefreshRobotsAsync();
+                }
+                else
+                {
+                    AppMessageColor = Colors.Red;
+                    AppMessage = $"Location is out of bounds.";
                 }
             }
             catch (Exception ex) 
@@ -415,6 +421,7 @@ namespace RuntimeTerror.Client
                 var res = await _httpClient.PostAsync("api/simulation/reset", null);
                 if (res.IsSuccessStatusCode)
                 {
+                    AppMessageColor = Color.FromRgb(144, 238, 144);
                     AppMessage = "Simulation reset.";
                     var data = await res.Content.ReadFromJsonAsync<SimulationResetResponseDto>();
                     if (data != null)
@@ -460,6 +467,7 @@ namespace RuntimeTerror.Client
                     var result = await response.Content.ReadFromJsonAsync<SelfTestResultDto>();
                     if (result != null)
                     {
+                        AppMessageColor = Color.FromRgb(144, 238, 144);
                         AppMessage = $"Self-Test ({result.DisplayName}): {result.Summary}";
                         if (Application.Current?.Windows.Count > 0 && Application.Current.Windows[0].Page != null)
                         {
@@ -469,6 +477,7 @@ namespace RuntimeTerror.Client
                 }
                 else
                 {
+                    AppMessageColor = Colors.Red;
                     AppMessage = $"Self-test failed to execute. Status: {response.StatusCode}";
                 }
                 await RefreshRobotsAsync();
