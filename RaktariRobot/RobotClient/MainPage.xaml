@@ -158,16 +158,16 @@
             <Border Grid.Column="0" BackgroundColor="{StaticResource PanelBackgroundColor}" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
                 <Grid RowDefinitions="Auto, *, *, *" ColumnDefinitions="2*,3*">
                     <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"  Text="Robot movement controls" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
-                    <Button Grid.Row="1" Grid.Column="0" Text="Start" Command="{Binding ResumeRobotCommand}" Margin="5,5,5,5"/>
-                    <Button Grid.Row="2" Grid.Column="0" Text="Pause" Command="{Binding PauseRobotCommand}" Margin="5,5,5,5"/>
-                    <Button Grid.Row="1" Grid.Column="1" Text="To Charger" Command="{Binding MoveToChargerCommand}" Margin="5,5,5,5"/>
-                    <Button Grid.Row="2" Grid.Column="1" Text="To Service" Command="{Binding MoveToServiceCommand}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="1" Grid.Column="0" Text="Start" Command="{Binding ResumeRobotCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="2" Grid.Column="0" Text="Pause" Command="{Binding PauseRobotCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="1" Grid.Column="1" Text="To Charger" Command="{Binding MoveToChargerCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="2" Grid.Column="1" Text="To Service" Command="{Binding MoveToServiceCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
                     <HorizontalStackLayout Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8" HorizontalOptions="Center" VerticalOptions="Center">
                         <Label Text="X:" VerticalOptions="Center"/>
                         <Entry Placeholder="X" Text="{Binding ManualTargetX}" WidthRequest="40" Keyboard="Numeric"/>
                         <Label Text="Y:" VerticalOptions="Center"/>
                         <Entry Placeholder="Y" Text="{Binding ManualTargetY}" WidthRequest="40" Keyboard="Numeric"/>
-                        <Button Text="Set target" Command="{Binding SetLocationCommand}"/>
+                        <Button Text="Set target" Command="{Binding SetLocationCommand}" IsEnabled="{Binding HasSelectedRobot}"/>
                     </HorizontalStackLayout>
                     
                 </Grid>
@@ -179,10 +179,84 @@
                     <Label Grid.Row="0" Text="Robot diagnostic controls" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
                     <ScrollView Grid.Row="1">
                         <VerticalStackLayout Spacing="5" Margin="10,0,10,5" VerticalOptions="Start">
-                            <Button Text="Clear warning" Command="{Binding ClearWarningCommand}" TextColor="Yellow" BackgroundColor="{StaticResource WarningBackgroundColor}"/>
-                            <Button Text="Fix error" Command="{Binding FixErrorCommand}" TextColor="Red" BackgroundColor="{StaticResource ErrorBackgroundColor}"/>
-                            <Button Text="Simulate fault" Command="{Binding SimulateFaultCommand}" />
-                            <Button Text="Run Self-Test" Command="{Binding RunSelfTestCommand}" BackgroundColor="#1E90FF" TextColor="White" />
+                            <Button Text="Clear warning" 
+                                Command="{Binding ClearWarningCommand}" 
+                                IsEnabled="{Binding HasSelectedRobot}">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroupList>
+                                        <VisualStateGroup Name="CommonStates">
+                                            <VisualState Name="Normal">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="{StaticResource WarningBackgroundColor}" />
+                                                    <Setter Property="TextColor" Value="Yellow" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                            <VisualState Name="Disabled">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="#333333" />
+                                                    <Setter Property="TextColor" Value="#959595" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateGroupList>
+                                </VisualStateManager.VisualStateGroups>
+                            </Button>
+
+                            <Button Text="Fix error" 
+                                Command="{Binding FixErrorCommand}" 
+                                IsEnabled="{Binding HasSelectedRobot}">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroupList>
+                                        <VisualStateGroup Name="CommonStates">
+                                            <VisualState Name="Normal">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="{StaticResource ErrorBackgroundColor}" />
+                                                    <Setter Property="TextColor" Value="Red" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                            <VisualState Name="Disabled">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="#333333" />
+                                                    <Setter Property="TextColor" Value="#959595" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateGroupList>
+                                </VisualStateManager.VisualStateGroups>
+                            </Button>
+
+                            <Button Text="Simulate fault" 
+                                Command="{Binding SimulateFaultCommand}" 
+                                IsEnabled="{Binding HasSelectedRobot}" />
+
+                            <Button Text="Run Self-Test" 
+                                Command="{Binding RunSelfTestCommand}" 
+                                IsEnabled="{Binding HasSelectedRobot}">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroupList>
+                                        <VisualStateGroup Name="CommonStates">
+                                            <VisualState Name="Normal">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="#1E90FF" />
+                                                    <Setter Property="TextColor" Value="White" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                            <VisualState Name="Disabled">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="#333333" />
+                                                    <Setter Property="TextColor" Value="#959595" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateGroupList>
+                                </VisualStateManager.VisualStateGroups>
+                            </Button>
                         </VerticalStackLayout>
                     </ScrollView>
                 </Grid>
