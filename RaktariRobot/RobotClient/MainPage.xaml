@@ -1,0 +1,279 @@
+﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:RuntimeTerror.Client"
+             xmlns:selectors="clr-namespace:RuntimeTerror.Client.Selectors"
+             xmlns:models="clr-namespace:RuntimeTerror.Client.Models"
+             x:DataType="local:MainViewModel"
+             x:Class="RobotClient.MainPage">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <local:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+            <local:IncrementOneConverter x:Key="IncrementOneConverter" />
+
+            <!-- Data Templates for Robot List -->
+            <DataTemplate x:Key="NormalRobotTemplate" x:DataType="models:ObservableRobot">
+                <ContentView Padding="10,8">
+                    <HorizontalStackLayout Spacing="10">
+                        <Ellipse WidthRequest="10" HeightRequest="10" Fill="Green" VerticalOptions="Center"/>
+                        <Label Text="{Binding DisplayName}" TextColor="White" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+                    </HorizontalStackLayout>
+                </ContentView>
+            </DataTemplate>
+
+            <DataTemplate x:Key="WarningRobotTemplate" x:DataType="models:ObservableRobot">
+                <ContentView Padding="10,8" BackgroundColor="{StaticResource WarningBackgroundColor}">
+                    <HorizontalStackLayout Spacing="10">
+                        <Ellipse WidthRequest="10" HeightRequest="10" Fill="Yellow" VerticalOptions="Center"/>
+                        <Label Text="{Binding DisplayName}" TextColor="Yellow" FontAttributes="Bold" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+                    </HorizontalStackLayout>
+                </ContentView>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ErrorRobotTemplate" x:DataType="models:ObservableRobot">
+                <ContentView Padding="10,8" BackgroundColor="{StaticResource ErrorBackgroundColor}">
+                    <HorizontalStackLayout Spacing="10">
+                        <Ellipse WidthRequest="10" HeightRequest="10" Fill="Red" VerticalOptions="Center"/>
+                        <Label Text="{Binding DisplayName}" TextColor="#FF6B6B" FontAttributes="Bold" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+                    </HorizontalStackLayout>
+                </ContentView>
+            </DataTemplate>
+
+            <selectors:RobotStateTemplateSelector x:Key="RobotStateSelector"
+                NormalTemplate="{StaticResource NormalRobotTemplate}"
+                WarningTemplate="{StaticResource WarningRobotTemplate}"
+                ErrorTemplate="{StaticResource ErrorRobotTemplate}" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ContentPage.BindingContext>
+        <local:MainViewModel />
+    </ContentPage.BindingContext>
+
+    <Grid ColumnDefinitions="5*, 6*" RowDefinitions="50, *, 215" ColumnSpacing="8" RowSpacing="8" Padding="8,4,8,8" BackgroundColor="#121212">
+        
+        <!-- Project name -->
+        <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource PanelStyle}">
+            <Label Text="Runtime Terror - Robot simulator" FontAttributes="Bold" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center" TextColor="{StaticResource PrimaryDark}" />
+        </Border>
+
+        <!-- General controls -->
+        <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource PanelStyle}">
+            <Grid ColumnDefinitions="*,3*">
+                <Label Grid.Column="0" Text="General controls" Style="{StaticResource PanelNameLabelStyle}" VerticalOptions="Center"/>
+                <HorizontalStackLayout Grid.Column="1" HorizontalOptions="End" VerticalOptions="Center" Spacing="10" Margin="0,0,10,0">
+                    <Button Text="{Binding SimulationButtonText}" Command="{Binding ToggleSimulationCommand}" WidthRequest="80" Style="{StaticResource StartButtonStyle}">
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding IsSimulationRunning}" Value="True">
+                                <Setter Property="Style" Value="{StaticResource StopButtonStyle}" />
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+                    <Button Text="Reset" Command="{Binding ResetSimulationCommand}" WidthRequest="80"/>
+                    <Button Text="Simple/Detailed view" Command="{Binding ToggleViewCommand}" />
+                    <Button Text="Statistics" Command="{Binding OpenStatisticsCommand}" BackgroundColor="MediumPurple" TextColor="White" FontAttributes="Bold"/>
+                </HorizontalStackLayout>
+            </Grid>
+        </Border>
+
+        <!-- Robot list and Toggleable info -->
+        <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="5*, 4*" RowSpacing="8">
+            <!-- Robot list -->
+            <Border Grid.Row="0" Grid.RowSpan="{Binding IsSimpleView, Converter={StaticResource IncrementOneConverter}}" Style="{StaticResource PanelStyle}">
+                <Grid RowDefinitions="Auto, *">
+                    <Label Grid.Row="0" Text="Robot list" Style="{StaticResource PanelNameLabelStyle}"/>
+                    <HorizontalStackLayout Grid.Row="0" HorizontalOptions="End" Spacing="5" Margin="5">
+                        <Entry Placeholder="Name" Text="{Binding InputNewName}" WidthRequest="110" />
+                        <Button Text="Add" Command="{Binding AddRobotCommand}" Padding="5,0"/>
+                        <Button Text="Rename" Command="{Binding RenameRobotCommand}" Padding="5,0"/>
+                        <Button Text="Remove" Command="{Binding RemoveRobotCommand}" Padding="5,0"/>
+                    </HorizontalStackLayout>
+                    <CollectionView Grid.Row="1" Margin="5" ItemsSource="{Binding RobotsList}" SelectedItem="{Binding SelectedRobot}" SelectionMode="Single"
+                                    ItemTemplate="{StaticResource RobotStateSelector}">
+                    </CollectionView>
+                </Grid>
+            </Border>
+
+            <!-- Toggleable detailed informations -->
+            <Border Grid.Row="1" Style="{StaticResource PanelStyle}" IsVisible="{Binding IsSimpleView, Converter={x:StaticResource InvertedBoolConverter}}">
+                <Grid RowDefinitions="Auto, *">
+                    <Label Grid.Row="0" Text="Detailed informations for selected robot" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
+                    <ScrollView Grid.Row="1">
+                        <VerticalStackLayout Margin="10,0,10,10">
+                            <Label Text="No robot selected." TextColor="Gray" IsVisible="{Binding HasSelectedRobot, Converter={x:StaticResource InvertedBoolConverter}}" Margin="0,5,0,0"/>
+                            <Label Text="{Binding SelectedRobot.DisplayName, StringFormat='Name: {0}'}" TextColor="White" IsVisible="{Binding HasSelectedRobot}" Margin="0,0,0,0"/>
+                            <Label Text="{Binding SelectedRobot.State, StringFormat='State: {0}'}" TextColor="White" IsVisible="{Binding HasSelectedRobot}"/>
+                            <Label Text="{Binding SelectedRobot.BatteryLevel, StringFormat='Battery: {0}%'}" TextColor="White" IsVisible="{Binding HasSelectedRobot}"/>
+                            <Label Text="{Binding SelectedRobot.DiagnosticLevel, StringFormat='Diagnostics: {0}'}" TextColor="White" IsVisible="{Binding HasSelectedRobot}"/>
+                            <Label Text="{Binding SelectedRobot.LastErrorMessage, StringFormat='Last Error: {0}'}" TextColor="Red" IsVisible="{Binding HasSelectedRobot}"/>
+                        </VerticalStackLayout>
+                    </ScrollView>
+                </Grid>
+            </Border> 
+        </Grid>
+
+        <!-- Map -->
+        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource PanelStyle}">
+            <Grid>
+                <Label Text="Map" Style="{StaticResource PanelNameLabelStyle}" Margin="10" ZIndex="1"/>
+                <ScrollView Orientation="Both" HorizontalOptions="Center" VerticalOptions="Center">
+                    <AbsoluteLayout WidthRequest="400" HeightRequest="280">
+                        <!-- Térkép Cella réteg -->
+                        <AbsoluteLayout BindableLayout.ItemsSource="{Binding MapCells}" WidthRequest="400" HeightRequest="280">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:MapCell">
+                                    <Border AbsoluteLayout.LayoutBounds="{Binding Bounds}" 
+                                            AbsoluteLayout.LayoutFlags="None"
+                                            BackgroundColor="{Binding BgColor}"
+                                            Stroke="Black" StrokeThickness="1">
+                                        <Label Text="{Binding Icon}" 
+                                               TextColor="{Binding TextColor}"
+                                               HorizontalOptions="Center" 
+                                               VerticalOptions="Center" 
+                                               FontAttributes="Bold"/>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </AbsoluteLayout>
+
+                        <!-- Robot réteg -->
+                        <AbsoluteLayout BindableLayout.ItemsSource="{Binding MapRobots}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:RobotMarker">
+                                    <Ellipse AbsoluteLayout.LayoutBounds="{Binding Bounds}"
+                                             AbsoluteLayout.LayoutFlags="None"
+                                             Fill="{Binding RobotColor}"
+                                             Stroke="Black" StrokeThickness="2" />
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </AbsoluteLayout>
+                    </AbsoluteLayout>
+                </ScrollView>
+            </Grid>
+        </Border>
+
+        <!-- Robot movement and diagnostic controls -->
+        <Grid Grid.Row="2" Grid.Column="0" ColumnDefinitions="6*, 5*" ColumnSpacing="8" BackgroundColor="Transparent">
+            <!-- Movement -->
+            <Border Grid.Column="0" BackgroundColor="{StaticResource PanelBackgroundColor}" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
+                <Grid RowDefinitions="Auto, *, *, *" ColumnDefinitions="2*,3*">
+                    <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"  Text="Robot movement controls" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
+                    <Button Grid.Row="1" Grid.Column="0" Text="Start" Command="{Binding ResumeRobotCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="2" Grid.Column="0" Text="Pause" Command="{Binding PauseRobotCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="1" Grid.Column="1" Text="To Charger" Command="{Binding MoveToChargerCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="2" Grid.Column="1" Text="To Service" Command="{Binding MoveToServiceCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
+                    <HorizontalStackLayout Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label Text="X:" VerticalOptions="Center"/>
+                        <Entry Placeholder="X" Text="{Binding ManualTargetX}" WidthRequest="40" Keyboard="Numeric"/>
+                        <Label Text="Y:" VerticalOptions="Center"/>
+                        <Entry Placeholder="Y" Text="{Binding ManualTargetY}" WidthRequest="40" Keyboard="Numeric"/>
+                        <Button Text="Set target" Command="{Binding SetLocationCommand}" IsEnabled="{Binding HasSelectedRobot}"/>
+                    </HorizontalStackLayout>
+                    
+                </Grid>
+            </Border>
+
+            <!-- Diagnostics Controls -->
+            <Border Grid.Column="1" BackgroundColor="{StaticResource PanelBackgroundColor}" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
+                <Grid RowDefinitions="Auto, *">
+                    <Label Grid.Row="0" Text="Robot diagnostic controls" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
+                    <ScrollView Grid.Row="1">
+                        <VerticalStackLayout Spacing="5" Margin="10,0,10,5" VerticalOptions="Start">
+                            <Button Text="Clear warning" 
+                                Command="{Binding ClearWarningCommand}" 
+                                IsEnabled="{Binding HasSelectedRobot}">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroupList>
+                                        <VisualStateGroup Name="CommonStates">
+                                            <VisualState Name="Normal">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="{StaticResource WarningBackgroundColor}" />
+                                                    <Setter Property="TextColor" Value="Yellow" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                            <VisualState Name="Disabled">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="#333333" />
+                                                    <Setter Property="TextColor" Value="#959595" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateGroupList>
+                                </VisualStateManager.VisualStateGroups>
+                            </Button>
+
+                            <Button Text="Fix error" 
+                                Command="{Binding FixErrorCommand}" 
+                                IsEnabled="{Binding HasSelectedRobot}">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroupList>
+                                        <VisualStateGroup Name="CommonStates">
+                                            <VisualState Name="Normal">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="{StaticResource ErrorBackgroundColor}" />
+                                                    <Setter Property="TextColor" Value="Red" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                            <VisualState Name="Disabled">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="#333333" />
+                                                    <Setter Property="TextColor" Value="#959595" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateGroupList>
+                                </VisualStateManager.VisualStateGroups>
+                            </Button>
+
+                            <Button Text="Simulate fault" 
+                                Command="{Binding SimulateFaultCommand}" 
+                                IsEnabled="{Binding HasSelectedRobot}" />
+
+                            <Button Text="Run Self-Test" 
+                                Command="{Binding RunSelfTestCommand}" 
+                                IsEnabled="{Binding HasSelectedRobot}">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroupList>
+                                        <VisualStateGroup Name="CommonStates">
+                                            <VisualState Name="Normal">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="#1E90FF" />
+                                                    <Setter Property="TextColor" Value="White" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                            <VisualState Name="Disabled">
+                                                <VisualState.Setters>
+                                                    <Setter Property="BackgroundColor" Value="#333333" />
+                                                    <Setter Property="TextColor" Value="#959595" />
+                                                    <Setter Property="Opacity" Value="1.0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateGroupList>
+                                </VisualStateManager.VisualStateGroups>
+                            </Button>
+                        </VerticalStackLayout>
+                    </ScrollView>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Diagnostics App Wide -->
+        <Border Grid.Row="2" Grid.Column="1" BackgroundColor="{StaticResource PanelBackgroundColor}" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
+            <Grid RowDefinitions="Auto, *">
+                <Label Grid.Row="0" Text="Diagnostics (errors, warnings)" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
+                <ScrollView Grid.Row="1" Margin="10,0,10,10">
+                    <VerticalStackLayout>
+                        <Label Text="{Binding AppMessage}" TextColor= "{Binding AppMessageColor}" />
+                    </VerticalStackLayout>
+                </ScrollView>
+            </Grid>
+        </Border>
+        
+    </Grid>
+</ContentPage>
