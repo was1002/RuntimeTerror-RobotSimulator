@@ -1,9 +1,10 @@
 ﻿using RuntimeTerror.Client;
 using Xunit;
 using RuntimeTerror.Client.Models;
+using RuntimeTerror.Client.ViewModels;
 using RobotShared;
 
-namespace RobotTest.Client
+namespace RobotTest.Client.ViewModels
 {
     public class MainViewModelTest
     {
@@ -121,14 +122,14 @@ namespace RobotTest.Client
             Assert.NotNull(vm.AddRobotCommand);
             Assert.NotNull(vm.RemoveRobotCommand);
             Assert.NotNull(vm.RenameRobotCommand);
-            Assert.NotNull(vm.ResumeRobotCommand);
-            Assert.NotNull(vm.PauseRobotCommand);
-            Assert.NotNull(vm.MoveToChargerCommand);
-            Assert.NotNull(vm.MoveToServiceCommand);
-            Assert.NotNull(vm.SetLocationCommand);
-            Assert.NotNull(vm.ClearWarningCommand);
-            Assert.NotNull(vm.FixErrorCommand);
-            Assert.NotNull(vm.SimulateFaultCommand);
+            Assert.NotNull(vm.ControlVM.ResumeRobotCommand);
+            Assert.NotNull(vm.ControlVM.PauseRobotCommand);
+            Assert.NotNull(vm.ControlVM.MoveToChargerCommand);
+            Assert.NotNull(vm.ControlVM.MoveToServiceCommand);
+            Assert.NotNull(vm.ControlVM.SetLocationCommand);
+            Assert.NotNull(vm.ControlVM.ClearWarningCommand);
+            Assert.NotNull(vm.ControlVM.FixErrorCommand);
+            Assert.NotNull(vm.ControlVM.SimulateFaultCommand);
         }
 
         [Fact]
@@ -185,12 +186,12 @@ namespace RobotTest.Client
                 // Wait until MapCells have been populated or timeout
                 var expected = warehouse.Width * warehouse.Height;
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                while (vm.MapCells.Count != expected && sw.ElapsedMilliseconds < 5000)
+                while (vm.MapVM.MapCells.Count != expected && sw.ElapsedMilliseconds < 5000)
                 {
                     await Task.Delay(50);
                 }
 
-                Assert.Equal(expected, vm.MapCells.Count);
+                Assert.Equal(expected, vm.MapVM.MapCells.Count);
             }
             finally
             {

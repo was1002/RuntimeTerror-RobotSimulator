@@ -7,6 +7,8 @@ using Microsoft.Maui.Graphics;
 using RobotShared;
 using RuntimeTerror.Client.Models;
 using System.Diagnostics;
+using RuntimeTerror.Client.ViewModels;
+using System.Collections.ObjectModel;
 
 namespace RuntimeTerror.Client
 {
@@ -14,10 +16,8 @@ namespace RuntimeTerror.Client
     {
         private readonly HttpClient _httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5090/") };
 
-        // --- Map Properties ---
-        public ObservableCollection<MapCell> MapCells { get; } = new();
-        public ObservableCollection<RobotMarker> MapRobots { get; } = new();
-        public double CellSize { get; } = 40; 
+        public MapViewModel MapVM { get; } = new();
+        public RobotControlViewModel ControlVM { get; }
 
         // --- Robot List Properties ---
         public ObservableCollection<ObservableRobot> RobotsList { get; } = new();
@@ -26,7 +26,12 @@ namespace RuntimeTerror.Client
         public ObservableRobot? SelectedRobot
         {
             get => _selectedRobot;
-            set { _selectedRobot = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasSelectedRobot)); }
+            set { 
+                _selectedRobot = value; 
+                if (ControlVM != null) ControlVM.SelectedRobot = value;
+                OnPropertyChanged(); 
+                OnPropertyChanged(nameof(HasSelectedRobot)); 
+            }
         }
 
         public bool HasSelectedRobot => SelectedRobot != null;
@@ -76,9 +81,6 @@ namespace RuntimeTerror.Client
             set { _appMessageColor = value; OnPropertyChanged(); }
         }
 
-        public int ManualTargetX { get; set; }
-        public int ManualTargetY { get; set; }
-
         private string _inputNewName = "robot-1";
         public string InputNewName 
         {
@@ -99,39 +101,22 @@ namespace RuntimeTerror.Client
         public ICommand AddRobotCommand { get; }
         public ICommand RemoveRobotCommand { get; }
         public ICommand RenameRobotCommand { get; }
-        
-        public ICommand ResumeRobotCommand { get; }
-        public ICommand PauseRobotCommand { get; }
-        public ICommand MoveToChargerCommand { get; }
-        public ICommand MoveToServiceCommand { get; }
-        public ICommand SetLocationCommand { get; }
-        
-        public ICommand ClearWarningCommand { get; }
-        public ICommand FixErrorCommand { get; }
-        public ICommand SimulateFaultCommand { get; }
-        public ICommand RunSelfTestCommand { get; }
         public ICommand OpenStatisticsCommand { get; }
 
         public MainViewModel()
         {
+            ControlVM = new RobotControlViewModel(_httpClient, (msg, col) => 
+            { 
+                AppMessage = msg; 
+                AppMessageColor = col == "Red" ? Colors.Red : Color.FromRgb(144, 238, 144);
+            }, async () => await RefreshRobotsAsync());
+
             ToggleSimulationCommand = new Command(ToggleSimulation);
             ResetSimulationCommand = new Command(async () => await ResetSimulation());
             ToggleViewCommand = new Command(ToggleView);
             AddRobotCommand = new Command(async () => await AddRobot());
-            RemoveRobotCommand = new Command(async () => await ExecuteRobotCommand("DELETE", ""));
+            RemoveRobotCommand = new Command(async () => await RemoveRobot());
             RenameRobotCommand = new Command(async () => await RenameRobot());
-
-            ResumeRobotCommand = new Command(async () => await ExecuteRobotCommand("POST", "resume"));
-            PauseRobotCommand = new Command(async () => await ExecuteRobotCommand("POST", "pause"));
-            MoveToChargerCommand = new Command(async () => await ExecuteRobotCommand("POST", "move-to-charger"));
-            MoveToServiceCommand = new Command(async () => await ExecuteRobotCommand("POST", "move-to-service"));
-            SetLocationCommand = new Command(async () => await SetManualLocation());
-            
-            ClearWarningCommand = new Command(async () => await ExecuteRobotCommand("POST", "clear-warning"));
-            FixErrorCommand = new Command(async () => await ExecuteRobotCommand("POST", "fix-error"));
-            SimulateFaultCommand = new Command(async () => await ExecuteRobotCommand("POST", "simulate-fault"));
-            
-            RunSelfTestCommand = new Command(async () => await RunSelfTest());
             OpenStatisticsCommand = new Command(async () => await OpenStatisticsWindow());
 
             LoadWarehouse();
@@ -144,40 +129,13 @@ namespace RuntimeTerror.Client
                 var warehouse = await _httpClient.GetFromJsonAsync<WarehouseDto>("api/warehouse");
                 if (warehouse != null)
                 {
-                    GenerateMap(warehouse);
+                    MapVM.GenerateMap(warehouse);
                 }
             }
             catch (Exception ex)
             {
                 AppMessageColor = Colors.Red;
                 AppMessage = $"Warehouse load error: {ex.Message}";
-            }
-        }
-
-        private void GenerateMap(WarehouseDto warehouse)
-        {
-            MapCells.Clear();
-            for (int y = 0; y < warehouse.Height; y++)
-            {
-                for (int x = 0; x < warehouse.Width; x++)
-                {
-                    string icon = "";
-                    Color bgColor = Colors.LightGray;
-
-                    if (warehouse.SpawnPosition.X == x && warehouse.SpawnPosition.Y == y) { icon = "R"; bgColor = Colors.LightBlue; }
-                    else if (warehouse.DropoffPosition.X == x && warehouse.DropoffPosition.Y == y) { icon = "D"; bgColor = Colors.Orange; }
-                    else if (warehouse.ChargerPosition.X == x && warehouse.ChargerPosition.Y == y) { icon = "C"; bgColor = Colors.Yellow; }
-                    else if (warehouse.ServicePosition.X == x && warehouse.ServicePosition.Y == y) { icon = "W"; bgColor = Colors.Magenta; }
-                    else if (warehouse.Shelves.Any(s => s.Position.X == x && s.Position.Y == y)) { icon = "S"; bgColor = Colors.SaddleBrown; }
-
-                    MapCells.Add(new MapCell
-                    {
-                        Icon = icon,
-                        BgColor = bgColor,
-                        TextColor = Colors.Black,
-                        Bounds = new Rect(x * CellSize, y * CellSize, CellSize - 2, CellSize - 2)
-                    });
-                }
             }
         }
 
@@ -234,15 +192,15 @@ namespace RuntimeTerror.Client
                     RobotsList.RemoveAt(i);
             }
 
-            for (int i = MapRobots.Count - 1; i >= 0; i--)
+            for (int i = MapVM.MapRobots.Count - 1; i >= 0; i--)
             {
-                if (!newIds.Contains(MapRobots[i].RobotId))
-                    MapRobots.RemoveAt(i);
+                if (!newIds.Contains(MapVM.MapRobots[i].RobotId))
+                    MapVM.MapRobots.RemoveAt(i);
             }
 
             foreach (var robot in newRobotsList)
             {
-                Color robotColor = Color.FromRgb(144, 238, 144);
+                Color robotColor = Colors.LightGreen;
                 if (robot.State == RobotState.Error) robotColor = Colors.Red;
                 else if (robot.State == RobotState.Paused || robot.State == RobotState.Charging) robotColor = Colors.Yellow;
                 else if (robot.State != RobotState.Idle) robotColor = Colors.Blue;
@@ -274,20 +232,20 @@ namespace RuntimeTerror.Client
                     RobotsList.Add(new ObservableRobot(robot));
                 }
 
-                var existingMarker = MapRobots.FirstOrDefault(m => m.RobotId == robot.RobotId);
+                var existingMarker = MapVM.MapRobots.FirstOrDefault(m => m.RobotId == robot.RobotId);
                 if (existingMarker != null)
                 {
                     existingMarker.DisplayName = robot.DisplayName;
-                    existingMarker.Bounds = new Rect(robot.Position.X * CellSize + 5, robot.Position.Y * CellSize + 5, CellSize - 12, CellSize - 12);
+                    existingMarker.Bounds = new Rect(robot.Position.X * MapVM.CellSize + 5, robot.Position.Y * MapVM.CellSize + 5, MapVM.CellSize - 12, MapVM.CellSize - 12);
                     existingMarker.RobotColor = robotColor;
                 }
                 else
                 {
-                    MapRobots.Add(new RobotMarker
+                    MapVM.MapRobots.Add(new RobotMarker
                     {
                         RobotId = robot.RobotId,
                         DisplayName = robot.DisplayName,
-                        Bounds = new Rect(robot.Position.X * CellSize + 5, robot.Position.Y * CellSize + 5, CellSize - 12, CellSize - 12),
+                        Bounds = new Rect(robot.Position.X * MapVM.CellSize + 5, robot.Position.Y * MapVM.CellSize + 5, MapVM.CellSize - 12, MapVM.CellSize - 12),
                         RobotColor = robotColor
                     });
                 }
@@ -299,46 +257,23 @@ namespace RuntimeTerror.Client
             }
         }
 
-        private async Task ExecuteRobotCommand(string method, string endpointSuffix)
+        private async Task RemoveRobot()
         {
-            if (SelectedRobot == null) 
-            {
-                AppMessageColor = Colors.Red;
-                AppMessage = "No robot selected.";
-                return;
-            }
-
+            if (SelectedRobot == null) return;
             try
             {
-                string url = $"api/robots/{SelectedRobot.RobotId}/{endpointSuffix}";
-                HttpResponseMessage response;
-                
-                if (method == "DELETE")
-                {
-                     url = $"api/robots/{SelectedRobot.RobotId}";
-                     response = await _httpClient.DeleteAsync(url);
-                }
-                else
-                {
-                     response = await _httpClient.PostAsync(url, null);
-                }
-
+                var response = await _httpClient.DeleteAsync($"api/robots/{SelectedRobot.RobotId}");
                 if (response.IsSuccessStatusCode)
                 {
-                    AppMessageColor = Color.FromRgb(144, 238, 144);
-                    AppMessage = "Command executed successfully.";
+                    AppMessageColor = Colors.LightGreen;
+                    AppMessage = "Robot removed.";
                     await RefreshRobotsAsync();
-                }
-                else
-                {
-                    AppMessageColor = Colors.Red;
-                    AppMessage = $"Command failed. Status code: {response.StatusCode}";
                 }
             }
             catch (Exception ex)
             {
                 AppMessageColor = Colors.Red;
-                AppMessage = $"Command error: {ex.Message}";
+                AppMessage = $"Remove error: {ex.Message}";
             }
         }
 
@@ -353,7 +288,7 @@ namespace RuntimeTerror.Client
                 var response = await _httpClient.PostAsJsonAsync("api/robots", req);
                 if (response.IsSuccessStatusCode)
                 {
-                    AppMessageColor = Color.FromRgb(144, 238, 144);
+                    AppMessageColor = Colors.LightGreen;
                     AppMessage = "Robot added.";
                     await RefreshRobotsAsync();
 
@@ -388,32 +323,6 @@ namespace RuntimeTerror.Client
             }
         }
 
-        private async Task SetManualLocation()
-        {
-            if (SelectedRobot == null) return;
-            try
-            {
-                var req = new MoveToLocationRequestDto { X = ManualTargetX, Y = ManualTargetY };
-                var response = await _httpClient.PostAsJsonAsync($"api/robots/{SelectedRobot.RobotId}/move-to-location", req);
-                if (response.IsSuccessStatusCode)
-                {
-                    AppMessageColor = Color.FromRgb(144, 238, 144);
-                    AppMessage = $"Location set to {req.X}, {req.Y}.";
-                    await RefreshRobotsAsync();
-                }
-                else
-                {
-                    AppMessageColor = Colors.Red;
-                    AppMessage = $"Location is out of bounds.";
-                }
-            }
-            catch (Exception ex) 
-            {
-                AppMessageColor = Colors.Red;
-                AppMessage = $"Location error: {ex.Message}";
-            }
-        }
-
         private async Task ResetSimulation()
         {
             try
@@ -421,12 +330,12 @@ namespace RuntimeTerror.Client
                 var res = await _httpClient.PostAsync("api/simulation/reset", null);
                 if (res.IsSuccessStatusCode)
                 {
-                    AppMessageColor = Color.FromRgb(144, 238, 144);
+                    AppMessageColor = Colors.LightGreen;
                     AppMessage = "Simulation reset.";
                     var data = await res.Content.ReadFromJsonAsync<SimulationResetResponseDto>();
                     if (data != null)
                     {
-                        GenerateMap(data.Warehouse);
+                        MapVM.GenerateMap(data.Warehouse);
                         UpdateRobotsData(data.Robots);
                         SelectedRobot = null;
                     }
@@ -448,45 +357,6 @@ namespace RuntimeTerror.Client
                 if (robots != null) UpdateRobotsData(robots);
             }
             catch { /* Ignore async refresh errors for brevity */ }
-        }
-
-        private async Task RunSelfTest()
-        {
-            if (SelectedRobot == null)
-            {
-                AppMessageColor = Colors.Red;
-                AppMessage = "No robot selected for self-test.";
-                return;
-            }
-
-            try
-            {
-                var response = await _httpClient.PostAsync($"api/robots/{SelectedRobot.RobotId}/self-test", null);
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = await response.Content.ReadFromJsonAsync<SelfTestResultDto>();
-                    if (result != null)
-                    {
-                        AppMessageColor = Color.FromRgb(144, 238, 144);
-                        AppMessage = $"Self-Test ({result.DisplayName}): {result.Summary}";
-                        if (Application.Current?.Windows.Count > 0 && Application.Current.Windows[0].Page != null)
-                        {
-                            await Application.Current.Windows[0].Page.DisplayAlert("Self-Test Result", result.Summary + (result.Success ? "" : "\n\nPlease check diagnostics array."), "OK");
-                        }
-                    }
-                }
-                else
-                {
-                    AppMessageColor = Colors.Red;
-                    AppMessage = $"Self-test failed to execute. Status: {response.StatusCode}";
-                }
-                await RefreshRobotsAsync();
-            }
-            catch (Exception ex) 
-            {
-                AppMessageColor = Colors.Red;
-                AppMessage = $"Self-test error: {ex.Message}";
-            }
         }
 
         private async Task OpenStatisticsWindow()

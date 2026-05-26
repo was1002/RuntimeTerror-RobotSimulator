@@ -119,7 +119,7 @@
                 <ScrollView Orientation="Both" HorizontalOptions="Center" VerticalOptions="Center">
                     <AbsoluteLayout WidthRequest="400" HeightRequest="280">
                         <!-- Térkép Cella réteg -->
-                        <AbsoluteLayout BindableLayout.ItemsSource="{Binding MapCells}" WidthRequest="400" HeightRequest="280">
+                        <AbsoluteLayout BindableLayout.ItemsSource="{Binding MapVM.MapCells}" WidthRequest="400" HeightRequest="280">
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate x:DataType="models:MapCell">
                                     <Border AbsoluteLayout.LayoutBounds="{Binding Bounds}" 
@@ -137,7 +137,7 @@
                         </AbsoluteLayout>
 
                         <!-- Robot réteg -->
-                        <AbsoluteLayout BindableLayout.ItemsSource="{Binding MapRobots}">
+                        <AbsoluteLayout BindableLayout.ItemsSource="{Binding MapVM.MapRobots}">
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate x:DataType="models:RobotMarker">
                                     <Ellipse AbsoluteLayout.LayoutBounds="{Binding Bounds}"
@@ -158,16 +158,16 @@
             <Border Grid.Column="0" BackgroundColor="{StaticResource PanelBackgroundColor}" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8">
                 <Grid RowDefinitions="Auto, *, *, *" ColumnDefinitions="2*,3*">
                     <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"  Text="Robot movement controls" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
-                    <Button Grid.Row="1" Grid.Column="0" Text="Start" Command="{Binding ResumeRobotCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
-                    <Button Grid.Row="2" Grid.Column="0" Text="Pause" Command="{Binding PauseRobotCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
-                    <Button Grid.Row="1" Grid.Column="1" Text="To Charger" Command="{Binding MoveToChargerCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
-                    <Button Grid.Row="2" Grid.Column="1" Text="To Service" Command="{Binding MoveToServiceCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="1" Grid.Column="0" Text="Start" Command="{Binding ControlVM.ResumeRobotCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="2" Grid.Column="0" Text="Pause" Command="{Binding ControlVM.PauseRobotCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="1" Grid.Column="1" Text="To Charger" Command="{Binding ControlVM.MoveToChargerCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
+                    <Button Grid.Row="2" Grid.Column="1" Text="To Service" Command="{Binding ControlVM.MoveToServiceCommand}" IsEnabled="{Binding HasSelectedRobot}" Margin="5,5,5,5"/>
                     <HorizontalStackLayout Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8" HorizontalOptions="Center" VerticalOptions="Center">
                         <Label Text="X:" VerticalOptions="Center"/>
-                        <Entry Placeholder="X" Text="{Binding ManualTargetX}" WidthRequest="40" Keyboard="Numeric"/>
+                        <Entry Placeholder="X" Text="{Binding ControlVM.ManualTargetX}" WidthRequest="40" Keyboard="Numeric"/>
                         <Label Text="Y:" VerticalOptions="Center"/>
-                        <Entry Placeholder="Y" Text="{Binding ManualTargetY}" WidthRequest="40" Keyboard="Numeric"/>
-                        <Button Text="Set target" Command="{Binding SetLocationCommand}" IsEnabled="{Binding HasSelectedRobot}"/>
+                        <Entry Placeholder="Y" Text="{Binding ControlVM.ManualTargetY}" WidthRequest="40" Keyboard="Numeric"/>
+                        <Button Text="Set target" Command="{Binding ControlVM.SetLocationCommand}" IsEnabled="{Binding HasSelectedRobot}"/>
                     </HorizontalStackLayout>
                     
                 </Grid>
@@ -180,7 +180,7 @@
                     <ScrollView Grid.Row="1">
                         <VerticalStackLayout Spacing="5" Margin="10,0,10,5" VerticalOptions="Start">
                             <Button Text="Clear warning" 
-                                Command="{Binding ClearWarningCommand}" 
+                                Command="{Binding ControlVM.ClearWarningCommand}" 
                                 IsEnabled="{Binding HasSelectedRobot}">
                                 <VisualStateManager.VisualStateGroups>
                                     <VisualStateGroupList>
@@ -205,7 +205,7 @@
                             </Button>
 
                             <Button Text="Fix error" 
-                                Command="{Binding FixErrorCommand}" 
+                                Command="{Binding ControlVM.FixErrorCommand}" 
                                 IsEnabled="{Binding HasSelectedRobot}">
                                 <VisualStateManager.VisualStateGroups>
                                     <VisualStateGroupList>
@@ -230,11 +230,11 @@
                             </Button>
 
                             <Button Text="Simulate fault" 
-                                Command="{Binding SimulateFaultCommand}" 
+                                Command="{Binding ControlVM.SimulateFaultCommand}" 
                                 IsEnabled="{Binding HasSelectedRobot}" />
 
                             <Button Text="Run Self-Test" 
-                                Command="{Binding RunSelfTestCommand}" 
+                                Command="{Binding ControlVM.RunSelfTestCommand}" 
                                 IsEnabled="{Binding HasSelectedRobot}">
                                 <VisualStateManager.VisualStateGroups>
                                     <VisualStateGroupList>
