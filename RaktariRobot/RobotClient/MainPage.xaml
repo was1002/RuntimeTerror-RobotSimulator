@@ -195,8 +195,7 @@
                 <Label Grid.Row="0" Text="Diagnostics (errors, warnings)" Style="{StaticResource PanelNameLabelStyle}" Margin="10,10,10,5"/>
                 <ScrollView Grid.Row="1" Margin="10,0,10,10">
                     <VerticalStackLayout>
-                        <Label Text="{Binding AppMessage}" TextColor="#FF6B6B" />
-                        <Label Text="No other warnings." TextColor="White"/>
+                        <Label Text="{Binding AppMessage}" TextColor= "{Binding AppMessageColor}" />
                     </VerticalStackLayout>
                 </ScrollView>
             </Grid>

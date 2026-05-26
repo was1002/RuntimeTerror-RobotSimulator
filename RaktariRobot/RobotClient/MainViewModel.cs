@@ -68,11 +68,27 @@ namespace RuntimeTerror.Client
             get => _appMessage;
             set { _appMessage = value; OnPropertyChanged(); }
         }
-        
+
+        private Color _appMessageColor = Colors.White;
+        public Color AppMessageColor
+        {
+            get => _appMessageColor;
+            set { _appMessageColor = value; OnPropertyChanged(); }
+        }
+
         public int ManualTargetX { get; set; }
         public int ManualTargetY { get; set; }
 
-        public string InputNewName { get; set; } = "ROBOT-NEW";
+        private string _inputNewName = "robot-1";
+        public string InputNewName 
+        {
+            get => _inputNewName;
+            set
+            {
+                _inputNewName = value;
+                OnPropertyChanged();
+            }
+        }
 
         private CancellationTokenSource? _tickCancellationTokenSource;
 
@@ -133,6 +149,7 @@ namespace RuntimeTerror.Client
             }
             catch (Exception ex)
             {
+                AppMessageColor = Colors.Red;
                 AppMessage = $"Warehouse load error: {ex.Message}";
             }
         }
@@ -225,7 +242,7 @@ namespace RuntimeTerror.Client
 
             foreach (var robot in newRobotsList)
             {
-                Color robotColor = Colors.Green;
+                Color robotColor = Color.FromRgb(144, 238, 144);
                 if (robot.State == RobotState.Error) robotColor = Colors.Red;
                 else if (robot.State == RobotState.Paused || robot.State == RobotState.Charging) robotColor = Colors.Yellow;
                 else if (robot.State != RobotState.Idle) robotColor = Colors.Blue;
@@ -284,7 +301,12 @@ namespace RuntimeTerror.Client
 
         private async Task ExecuteRobotCommand(string method, string endpointSuffix)
         {
-            if (SelectedRobot == null) { AppMessage = "No robot selected."; return; }
+            if (SelectedRobot == null) 
+            {
+                AppMessageColor = Colors.Red;
+                AppMessage = "No robot selected.";
+                return;
+            }
 
             try
             {
@@ -303,16 +325,19 @@ namespace RuntimeTerror.Client
 
                 if (response.IsSuccessStatusCode)
                 {
+                    AppMessageColor = Color.FromRgb(144, 238, 144);
                     AppMessage = "Command executed successfully.";
                     await RefreshRobotsAsync();
                 }
                 else
                 {
+                    AppMessageColor = Colors.Red;
                     AppMessage = $"Command failed. Status code: {response.StatusCode}";
                 }
             }
             catch (Exception ex)
             {
+                AppMessageColor = Colors.Red;
                 AppMessage = $"Command error: {ex.Message}";
             }
         }
@@ -321,15 +346,26 @@ namespace RuntimeTerror.Client
         {
             try
             {
-                var req = new CreateRobotRequestDto { DisplayName = InputNewName };
+                int nextIndex = RobotsList.Count + 1;
+                string dynamicName = $"robot-{nextIndex}";
+
+                var req = new CreateRobotRequestDto { DisplayName = dynamicName };
                 var response = await _httpClient.PostAsJsonAsync("api/robots", req);
                 if (response.IsSuccessStatusCode)
                 {
+                    AppMessageColor = Color.FromRgb(144, 238, 144);
                     AppMessage = "Robot added.";
                     await RefreshRobotsAsync();
+
+                    int futureIndex = RobotsList.Count + 1;
+                    InputNewName = $"robot-{futureIndex}";
                 }
             }
-            catch (Exception ex) { AppMessage = $"Add error: {ex.Message}"; }
+            catch (Exception ex) 
+            { 
+                AppMessageColor = Colors.Red;
+                AppMessage = $"Add error: {ex.Message}";
+            }
         }
 
         private async Task RenameRobot()
@@ -345,7 +381,11 @@ namespace RuntimeTerror.Client
                     await RefreshRobotsAsync();
                 }
             }
-            catch (Exception ex) { AppMessage = $"Rename error: {ex.Message}"; }
+            catch (Exception ex) 
+            {
+                AppMessageColor = Colors.Red;
+                AppMessage = $"Rename error: {ex.Message}"; 
+            }
         }
 
         private async Task SetManualLocation()
@@ -361,7 +401,11 @@ namespace RuntimeTerror.Client
                     await RefreshRobotsAsync();
                 }
             }
-            catch (Exception ex) { AppMessage = $"Location error: {ex.Message}"; }
+            catch (Exception ex) 
+            {
+                AppMessageColor = Colors.Red;
+                AppMessage = $"Location error: {ex.Message}";
+            }
         }
 
         private async Task ResetSimulation()
@@ -381,7 +425,11 @@ namespace RuntimeTerror.Client
                     }
                 }
             }
-            catch (Exception ex) { AppMessage = $"Reset error: {ex.Message}"; }
+            catch (Exception ex)
+            {
+                AppMessageColor = Colors.Red;
+                AppMessage = $"Reset error: {ex.Message}";
+            }
         }
 
         private async Task RefreshRobotsAsync()
@@ -397,7 +445,13 @@ namespace RuntimeTerror.Client
 
         private async Task RunSelfTest()
         {
-            if (SelectedRobot == null) { AppMessage = "No robot selected for self-test."; return; }
+            if (SelectedRobot == null)
+            {
+                AppMessageColor = Colors.Red;
+                AppMessage = "No robot selected for self-test.";
+                return;
+            }
+
             try
             {
                 var response = await _httpClient.PostAsync($"api/robots/{SelectedRobot.RobotId}/self-test", null);
@@ -419,7 +473,11 @@ namespace RuntimeTerror.Client
                 }
                 await RefreshRobotsAsync();
             }
-            catch (Exception ex) { AppMessage = $"Self-test error: {ex.Message}"; }
+            catch (Exception ex) 
+            {
+                AppMessageColor = Colors.Red;
+                AppMessage = $"Self-test error: {ex.Message}";
+            }
         }
 
         private async Task OpenStatisticsWindow()
