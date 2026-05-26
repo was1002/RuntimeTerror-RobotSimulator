@@ -7,9 +7,9 @@ namespace RuntimeTerror.Client.Models;
 public class MapCell
 {
     public Rect Bounds { get; set; }
-    public Color BgColor { get; set; }
-    public string Icon { get; set; }
-    public Color TextColor { get; set; }
+    public Color BgColor { get; set; } = Colors.Transparent;
+    public string Icon { get; set; } = string.Empty;
+    public Color TextColor { get; set; } = Colors.Transparent;
 }
 
 public class RobotMarker : INotifyPropertyChanged
@@ -23,7 +23,7 @@ public class RobotMarker : INotifyPropertyChanged
         set { _bounds = value; OnPropertyChanged(); }
     }
 
-    private string _displayName;
+    private string _displayName = string.Empty;
     public string DisplayName
     {
         get => _displayName;

@@ -2,6 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:RuntimeTerror.Client"
              xmlns:selectors="clr-namespace:RuntimeTerror.Client.Selectors"
+             xmlns:models="clr-namespace:RuntimeTerror.Client.Models"
+             x:DataType="local:MainViewModel"
              x:Class="RobotClient.MainPage">
 
     <ContentPage.Resources>
@@ -10,7 +12,7 @@
             <local:IncrementOneConverter x:Key="IncrementOneConverter" />
 
             <!-- Data Templates for Robot List -->
-            <DataTemplate x:Key="NormalRobotTemplate">
+            <DataTemplate x:Key="NormalRobotTemplate" x:DataType="models:ObservableRobot">
                 <ContentView Padding="10,8">
                     <HorizontalStackLayout Spacing="10">
                         <Ellipse WidthRequest="10" HeightRequest="10" Fill="Green" VerticalOptions="Center"/>
@@ -19,7 +21,7 @@
                 </ContentView>
             </DataTemplate>
 
-            <DataTemplate x:Key="WarningRobotTemplate">
+            <DataTemplate x:Key="WarningRobotTemplate" x:DataType="models:ObservableRobot">
                 <ContentView Padding="10,8" BackgroundColor="{StaticResource WarningBackgroundColor}">
                     <HorizontalStackLayout Spacing="10">
                         <Ellipse WidthRequest="10" HeightRequest="10" Fill="Yellow" VerticalOptions="Center"/>
@@ -28,7 +30,7 @@
                 </ContentView>
             </DataTemplate>
 
-            <DataTemplate x:Key="ErrorRobotTemplate">
+            <DataTemplate x:Key="ErrorRobotTemplate" x:DataType="models:ObservableRobot">
                 <ContentView Padding="10,8" BackgroundColor="{StaticResource ErrorBackgroundColor}">
                     <HorizontalStackLayout Spacing="10">
                         <Ellipse WidthRequest="10" HeightRequest="10" Fill="Red" VerticalOptions="Center"/>
@@ -119,7 +121,7 @@
                         <!-- Térkép Cella réteg -->
                         <AbsoluteLayout BindableLayout.ItemsSource="{Binding MapCells}" WidthRequest="400" HeightRequest="280">
                             <BindableLayout.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="models:MapCell">
                                     <Border AbsoluteLayout.LayoutBounds="{Binding Bounds}" 
                                             AbsoluteLayout.LayoutFlags="None"
                                             BackgroundColor="{Binding BgColor}"
@@ -137,7 +139,7 @@
                         <!-- Robot réteg -->
                         <AbsoluteLayout BindableLayout.ItemsSource="{Binding MapRobots}">
                             <BindableLayout.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="models:RobotMarker">
                                     <Ellipse AbsoluteLayout.LayoutBounds="{Binding Bounds}"
                                              AbsoluteLayout.LayoutFlags="None"
                                              Fill="{Binding RobotColor}"
