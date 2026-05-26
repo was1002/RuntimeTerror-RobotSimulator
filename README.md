@@ -90,7 +90,7 @@ Technológiák
 - [ ] 5p: Fájlba mentés és onnan betöltés (Videóban: használat közben a UI vagy forráskód részlet)
 - [x] 5p: Linq használata nem triviális feladatra (query vagy method syntax is lehet) (Videóban: forráskódban kiemelve)
 - [x] 5p: Sorosítás JSON vagy XML formátumba (Videóban: generált XML/JSON felvillantása). A sorosításnál saját típust olvassatok be vagy írjatok ki, vagyis ne egy JsonObject-et töltsetek be, amiből aztán kézzel kiszeditek az adatokat. Azzal nem használjátok ki a sorosítás igazi erejét!
-- [ ] 5p: Alapos öntesztelő funkció a robot számára. A tesztet futtathatja a kliens program is, de a robot firmwareje is. A lényeg, hogy van öntesztelési funkció. (Videóban: futás közben bemutatva)
+- [x] 5p: Alapos öntesztelő funkció a robot számára. A tesztet futtathatja a kliens program is, de a robot firmwareje is. A lényeg, hogy van öntesztelési funkció. (Videóban: futás közben bemutatva)
 - [ ] 10p: grafikon megjelenítő package (pl. oxyplot) használata nem csak alapbeállításokkal (Videóban: UI-on megmutatva)
 
 Módszertani szempontok
